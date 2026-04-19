@@ -7,6 +7,13 @@ This document defines the sequenced execution plan for building the library. Epi
 - `[~]` — In progress
 - `[x]` — Complete
 
+**Workflow rule:** This project follows strict TDD (see `docs/AGENTS.md` Section 7). Every subtask that produces runtime code (`src/`) must follow the Red-Green-Refactor cycle with separate commits:
+1. `test(<scope>):` commit — write failing tests first
+2. `feat(<scope>):` commit — implement to make tests pass
+3. `refactor(<scope>):` commit — clean up (optional)
+
+Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only subtasks use `feat(<scope>):` commits (no test commit needed for pure types).
+
 ---
 
 ## Epic 1: Project Scaffolding
@@ -18,7 +25,7 @@ This document defines the sequenced execution plan for building the library. Epi
 ### Subtasks
 
 #### 1.1 Initialize the npm package
-- [ ] Run `npm init` and configure `package.json` with:
+- [x] Run `npm init` and configure `package.json` with:
   - `name`: `canvas-pdflib-converter`
   - `version`: `0.1.0`
   - `description`: Converts Fabric.js canvas objects to pdf-lib PDF documents
@@ -30,40 +37,42 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Create `.npmignore` or verify `files` field excludes non-dist content.
 
 #### 1.2 Configure TypeScript
-- [ ] Create `tsconfig.json` with `strict: true`, `target: ES2020`, `moduleResolution: bundler`, path aliases (`@/*` -> `src/*`).
-- [ ] Create `tsconfig.build.json` extending base, with `outDir`, `declaration: true`, `declarationDir`, `exclude: ["tests"]`.
+- [x] Create `tsconfig.json` with `strict: true`, `target: ES2020`, `moduleResolution: bundler`, path aliases (`@/*` -> `src/*`).
+- [x] Create `tsconfig.build.json` extending base, with `outDir`, `declaration: true`, `declarationDir`, `exclude: ["tests"]`.
 
 #### 1.3 Configure build tooling
-- [ ] Install `tsup` as dev dependency.
-- [ ] Create `tsup.config.ts` producing ESM + CJS bundles with source maps and `.d.ts` generation.
-- [ ] Add `build` script to `package.json`.
-- [ ] Verify `npm run build` produces `dist/esm/`, `dist/cjs/`, and type declarations.
+- [x] Install `tsup` as dev dependency.
+- [x] Create `tsup.config.ts` producing ESM + CJS bundles with source maps and `.d.ts` generation.
+- [x] Add `build` script to `package.json`.
+- [x] Verify `npm run build` produces `dist/` with `.js`, `.cjs`, and type declarations.
 
 #### 1.4 Configure linting and formatting
-- [ ] Install `eslint`, `@typescript-eslint/parser`, `@typescript-eslint/eslint-plugin`, `eslint-plugin-import`.
-- [ ] Create `eslint.config.mjs` with strict type-checked rules, `import/no-cycle`, import ordering.
-- [ ] Install `prettier`.
-- [ ] Create `.prettierrc` per AGENTS.md Section 4.
-- [ ] Add `lint`, `lint:fix`, `format` scripts to `package.json`.
+- [x] Install `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-import`.
+- [x] Create `eslint.config.mjs` with strict type-checked rules, `import/no-cycle`.
+- [x] Install `prettier`.
+- [x] Create `.prettierrc` per AGENTS.md Section 4.
+- [x] Add `lint`, `lint:fix`, `format`, `format:check` scripts to `package.json`.
 
 #### 1.5 Configure testing
-- [ ] Install `vitest` as dev dependency.
-- [ ] Create `vitest.config.ts` with coverage thresholds (90% line for `src/`, 100% for `src/transform/` and `src/color/`).
-- [ ] Create directory structure: `tests/unit/`, `tests/integration/`, `tests/fixtures/`, `tests/visual/`.
-- [ ] Add `test`, `test:unit`, `test:int`, `test:visual`, `test:coverage` scripts to `package.json`.
-- [ ] Write a trivial passing test to verify the setup works.
+- [x] Install `vitest` and `@vitest/coverage-v8` as dev dependencies.
+- [x] Create `vitest.config.ts` with coverage thresholds (90% line for `src/`).
+- [x] Create directory structure: `tests/unit/`, `tests/integration/`, `tests/fixtures/`, `tests/visual/`.
+- [x] Add `test`, `test:unit`, `test:int`, `test:visual`, `test:coverage`, `test:watch` scripts to `package.json`.
+- [x] Write a trivial passing test to verify the setup works.
 
 #### 1.6 Create source directory skeleton
-- [ ] Create all directories under `src/` per PLAN.md Section 3.2:
+- [x] Create all directories under `src/` per PLAN.md Section 3.2:
   - `src/types/`, `src/core/`, `src/transform/`, `src/fonts/`, `src/images/`, `src/renderers/`, `src/color/`, `src/utils/`, `src/errors/`
-- [ ] Create placeholder `index.ts` barrel files in each directory (empty named exports).
-- [ ] Create root `src/index.ts` that re-exports from submodules.
-- [ ] Verify `npm run build` still succeeds with the skeleton.
+- [x] Create placeholder `index.ts` barrel files in each directory.
+- [x] Root `src/index.ts` already created in 1.3.
+- [x] Verify `npm run build`, `npm run lint`, `npm test` all pass.
 
 #### 1.7 Install peer dependencies for development
-- [ ] Install `pdf-lib` and `@pdf-lib/fontkit` as dev dependencies (they are peer deps, but needed locally for development and testing).
+- [x] Install `pdf-lib` and `@pdf-lib/fontkit` as dev dependencies (they are peer deps, but needed locally for development and testing).
 
-**Exit criteria:** `npm run build`, `npm run lint`, and `npm test` all pass. Directory structure matches PLAN.md.
+**Commit pattern for this epic:** Each subtask is a `chore(build):` or `chore(setup):` commit. No TDD cycle for config/tooling.
+
+**Exit criteria:** `npm run build`, `npm run lint`, and `npm test` all pass. Directory structure matches PLAN.md. ✅ **COMPLETE** Each subtask has its own commit.
 
 ---
 
@@ -161,7 +170,9 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Re-export all public types from `src/types/index.ts`.
 - [ ] Re-export from `src/index.ts` the types users need: `ConverterOptions`, `ConversionWarning`, `ConversionResult`, `FontRegistry`, `FontVariants`, `ImageResolver`, `ObjectRenderer`, `RenderContext`.
 
-**Exit criteria:** `npm run build` succeeds. All types compile. No `any` usage. Types are importable from the package entry point.
+**Commit pattern for this epic:** `feat(types):` commits (no TDD for pure type definitions). One commit per subtask or logical group.
+
+**Exit criteria:** `npm run build` succeeds. All types compile. No `any` usage. Types are importable from the package entry point. Each subtask has its own commit.
 
 ---
 
@@ -247,7 +258,18 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Implement `fabricDashToPdfDash(strokeDashArray: number[], strokeWidth: number): { dashArray: number[], dashPhase: number }`.
 - [ ] Write unit tests.
 
-**Exit criteria:** All utility modules compile, pass tests, have required coverage. No external dependencies used. Every function is a pure function with no side effects.
+**Commit pattern for this epic:** Strict TDD. Each subtask (3.1 through 3.9) produces:
+1. `test(<scope>): add tests for <module>` — failing tests committed first
+2. `feat(<scope>): implement <module>` — implementation to make tests green
+3. `refactor(<scope>): ...` — optional cleanup
+
+Example sequence for subtask 3.3:
+```
+test(transform): add tests for matrix math utilities
+feat(transform): implement matrix composition, multiplication, and inversion
+```
+
+**Exit criteria:** All utility modules compile, pass tests, have required coverage. No external dependencies used. Every function is a pure function with no side effects. Each subtask has a test commit followed by a feat commit.
 
 ---
 
@@ -285,6 +307,14 @@ This document defines the sequenced execution plan for building the library. Epi
   - `getAll(): Map<string, ObjectRenderer>`.
 - [ ] Implement `createDefaultRegistry(): RendererRegistry` — factory that registers all built-in renderers.
 - [ ] Write unit tests for register, get, has, duplicate registration behavior.
+
+**Commit pattern for this epic:** Strict TDD per subtask.
+```
+test(renderer): add tests for base renderer template method
+feat(renderer): implement BaseRenderer with graphics state management
+test(renderer): add tests for renderer registry
+feat(renderer): implement RendererRegistry with type-based dispatch
+```
 
 **Exit criteria:** `BaseRenderer` can be subclassed. Registry correctly maps types. Template method correctly wraps draw calls in graphics state save/restore and transformation matrix application.
 
@@ -342,6 +372,16 @@ This document defines the sequenced execution plan for building the library. Epi
   - Correct number of content stream operators (rough check).
 - [ ] Optional: render the PDF to an image and visually verify.
 
+**Commit pattern for this epic:** Strict TDD. Each renderer (5.1-5.5) is a test+feat commit pair. The integration test (5.6) is a standalone `test(renderer):` commit.
+```
+test(renderer): add tests for rect renderer
+feat(renderer): implement rect renderer with rounded corner support
+test(renderer): add tests for circle renderer
+feat(renderer): implement circle renderer
+...
+test(renderer): add integration test for basic shapes
+```
+
 **Exit criteria:** All 5 shape renderers pass unit tests. Integration test produces a valid PDF. Shapes appear at correct positions with correct colors (verified via visual test or operator inspection).
 
 ---
@@ -386,6 +426,8 @@ This document defines the sequenced execution plan for building the library. Epi
 #### 6.5 Integration test: vector paths
 - [ ] Create fixture with complex paths, polylines, and polygons.
 - [ ] Write integration test verifying valid PDF output.
+
+**Commit pattern for this epic:** Strict TDD per subtask (6.1-6.5).
 
 **Exit criteria:** All path types render correctly. SVG path commands are faithfully translated. Stroke dash/cap/join properties work on all shape and path types.
 
@@ -432,6 +474,8 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Create fixture with image objects (using base64 data URLs for self-contained testing).
 - [ ] Write integration test verifying images are embedded in the output PDF.
 
+**Commit pattern for this epic:** Strict TDD per subtask (7.1-7.4).
+
 **Exit criteria:** PNG and JPG images load, embed, and render at correct positions/sizes. Data URLs and external URLs both work. Crop via clip path works. Failed images produce warnings, not crashes.
 
 ---
@@ -473,6 +517,8 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Implement `getDescenderHeight(font: PDFFont, fontSize: number): number` — descender depth.
 - [ ] Implement `getBaselineOffset(font: PDFFont, fontSize: number): number` — the Y offset from the top of the bounding box to the baseline.
 - [ ] Write unit tests (with a real or well-mocked PDFFont).
+
+**Commit pattern for this epic:** Strict TDD per subtask (8.1-8.3).
 
 **Exit criteria:** Fonts can be resolved from registry, standard mappings, or fallback. Metrics are correctly computed. Cache prevents duplicate embedding. Missing fonts produce warnings with fallback.
 
@@ -553,6 +599,17 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Create fixture with: single-line text, multi-line text, centered text, right-aligned text, textbox with wrapping, styled text, text with decorations.
 - [ ] Write integration test verifying valid PDF output with text content.
 
+**Commit pattern for this epic:** Strict TDD. Each sub-feature (9.1-9.10) is a test+feat commit pair. This epic will produce the most commits due to its complexity.
+```
+test(text): add tests for basic single-line text rendering
+feat(text): implement single-line text with font resolution and baseline
+test(text): add tests for multi-line text positioning
+feat(text): implement multi-line text rendering
+test(text): add tests for text alignment (left, center, right)
+feat(text): implement text alignment with width-based offsets
+...
+```
+
 **Exit criteria:** All text types render with correct position, alignment, wrapping, decorations, and per-character styling. Font resolution and metrics produce visually accurate results.
 
 ---
@@ -585,6 +642,8 @@ This document defines the sequenced execution plan for building the library. Epi
 #### 10.3 Integration test: groups
 - [ ] Create fixture with nested groups, groups with clip paths, deeply nested groups.
 - [ ] Write integration test.
+
+**Commit pattern for this epic:** Strict TDD per subtask (10.1-10.3).
 
 **Exit criteria:** Groups render children at correct relative positions. Nested groups compose transforms correctly. ClipPaths clip child content. Depth limit prevents runaway recursion.
 
@@ -672,6 +731,23 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Verify no internal types or utility functions leak through.
 - [ ] Write a "public API shape" test that imports from the package entry and verifies expected exports exist.
 
+**Commit pattern for this epic:** Strict TDD for subtasks 11.1-11.6. Subtask 11.7 (re-exports) is a `feat(api):` commit.
+```
+test(core): add tests for JSON parser and input validation
+feat(core): implement parseCanvasJSON with validation
+test(core): add tests for options resolver with defaults
+feat(core): implement resolveOptions with sensible defaults
+test(core): add tests for main converter orchestrator
+feat(core): implement convertCanvasToPdf pipeline
+test(api): add tests for FabricToPdf.convert public API
+feat(api): implement FabricToPdf static convert method
+test(api): add tests for FabricToPdfConverter advanced API
+feat(api): implement FabricToPdfConverter with multi-page support
+test(api): add tests for custom renderer registration
+feat(api): implement registerRenderer on FabricToPdfConverter
+feat(api): export public API surface from index.ts
+```
+
 **Exit criteria:** `FabricToPdf.convert(json)` produces a valid PDF. `FabricToPdfConverter` supports multi-page and custom renderers. All public API inputs are validated. Warnings are collected and returned.
 
 ---
@@ -710,6 +786,8 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Missing image (with warn mode) -> warning collected, PDF still produced.
 - [ ] Unknown object type (with error mode) -> `UnsupportedFeatureError`.
 - [ ] Deeply nested groups exceeding limit -> warning, no crash.
+
+**Commit pattern for this epic:** One `test(integration):` commit per subtask.
 
 **Exit criteria:** All integration tests pass. The library handles realistic inputs without crashing. Error and warning paths are tested.
 
@@ -783,6 +861,8 @@ This document defines the sequenced execution plan for building the library. Epi
 - [ ] Verify `npm pack` produces a clean tarball.
 - [ ] Test installing the package from tarball in a fresh project.
 - [ ] Verify TypeScript types are usable from the installed package.
+
+**Commit pattern for this epic:** Mix of TDD pairs for runtime subtasks (13.1-13.4) and `chore(...)` / `docs(...)` commits for config, CI, and documentation subtasks (13.5-13.10).
 
 **Exit criteria:** Library is production-ready. All tests pass. Documentation is complete. CI/CD is configured. Bundle is optimized. Package is publishable.
 
