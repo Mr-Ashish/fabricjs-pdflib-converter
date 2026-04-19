@@ -3,14 +3,19 @@
   "version": "0.1.0",
   "description": "Converts Fabric.js canvas objects to pdf-lib PDF documents with high-fidelity vector output",
   "license": "MIT",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -22,12 +27,16 @@
   "engines": {
     "node": ">=18"
   },
-  "scripts": {},
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
   "peerDependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
+    "tsup": "8.4.0",
     "typescript": "5.8.3"
   },
   "keywords": [
