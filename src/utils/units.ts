@@ -61,3 +61,12 @@ export function ptToMm(pt: number): number {
 export function mmToPt(mm: number): number {
   return (mm * POINTS_PER_INCH) / MM_PER_INCH;
 }
+
+/**
+ * Converts inches to points.
+ * @param inches - Value in inches
+ * @returns Value in points
+ */
+export function inchToPt(inches: number): number {
+  return inches * POINTS_PER_INCH;
+}

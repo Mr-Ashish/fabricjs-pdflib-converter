@@ -169,7 +169,105 @@ class UnsupportedFeatureError extends ConversionError { ... }
 
 ---
 
-## 7. Testing Rules
+## 7. Test-Driven Development (TDD)
+
+This project follows **strict TDD**. No implementation code is written without a failing test first. This is a non-negotiable workflow rule.
+
+### The Red-Green-Refactor Cycle
+
+Every unit of work follows this exact sequence:
+
+1. **Red — Write a failing test first.**
+   - Before writing any implementation code, write a test that describes the expected behavior.
+   - Run the test. It **must fail**. If it passes, the test is not testing new behavior — revise it.
+   - The failing test defines the contract the implementation must satisfy.
+
+2. **Green — Write the minimum code to make the test pass.**
+   - Write only enough implementation code to make the failing test pass.
+   - Do not add extra logic, handle edge cases not yet tested, or optimize.
+   - Run the test. It must pass. All previously passing tests must still pass.
+
+3. **Refactor — Clean up while tests stay green.**
+   - Improve the implementation: rename, extract, simplify, remove duplication.
+   - Run all tests after every refactor step. They must remain green.
+   - Do not add new behavior during refactoring. Behavior changes require a new Red step.
+
+### TDD Rules
+
+- **No implementation without a test.** Every function, method, and class must have its test written before the implementation. If you find yourself writing implementation code without a corresponding test, stop and write the test first.
+- **Test the interface, not the implementation.** Tests should assert observable behavior (return values, state changes, thrown errors, method calls on collaborators). Never test private methods directly or assert on internal data structures.
+- **One assertion focus per test.** Each test should verify one logical behavior. Multiple `expect()` calls are fine if they assert different facets of the same behavior, but do not test unrelated behaviors in one test.
+- **Tests are first-class code.** Apply the same quality standards (naming, readability, no duplication) to test code as to production code. Use factory functions and helpers to keep tests clean.
+- **Keep tests fast.** Unit tests must not perform I/O, network calls, or real PDF generation. Mock external dependencies. A single unit test should complete in under 50ms.
+- **Test edge cases explicitly.** After the happy path passes, write dedicated tests for: null/undefined inputs, empty arrays, zero values, boundary conditions, error paths. Each edge case gets its own test.
+- **Tests must be independent.** No test may depend on the execution order or side effects of another test. Each test sets up its own state and tears it down.
+
+### TDD Workflow Per Subtask
+
+When working on any subtask from EPICS.md, follow this sequence:
+
+```
+1. Read the subtask requirements.
+2. Write test file(s) for the subtask — all tests should fail.
+3. Commit the failing tests:
+   test(scope): add tests for <subtask description>
+4. Implement the code to make tests pass — minimal, correct code only.
+5. Run all tests — new tests pass, no regressions.
+6. Commit the implementation:
+   feat(scope): implement <subtask description>
+7. Refactor if needed (rename, extract, simplify).
+8. Run all tests — still green.
+9. Commit the refactor (if any changes):
+   refactor(scope): clean up <what was improved>
+```
+
+This produces a clear, auditable commit history: every feature has a test commit before its implementation commit.
+
+### When to Skip the Full TDD Cycle
+
+The strict Red-Green-Refactor cycle applies to all code in `src/`. The following are exceptions:
+
+- **Type definitions** (`src/types/`) — Types have no runtime behavior. They do not need tests. However, you must write a compile-time test (a file that imports and uses the types) to verify they are correctly exported.
+- **Barrel files** (`index.ts` re-exports) — No tests needed for re-exports.
+- **Configuration files** (`tsconfig.json`, `vitest.config.ts`, etc.) — Not tested via unit tests, but validated by the build and test pipeline passing.
+- **Integration tests** — Integration tests test the assembled system, not individual units. They are not written in TDD style but are written after the units they exercise are complete.
+
+### Test File Organization
+
+Each source file gets a corresponding test file:
+
+```
+src/transform/matrix.ts         → tests/unit/transform/matrix.test.ts
+src/color/color.ts              → tests/unit/color/color.test.ts
+src/renderers/rect.renderer.ts  → tests/unit/renderers/rect.renderer.test.ts
+src/core/converter.ts           → tests/unit/core/converter.test.ts
+```
+
+Test file structure:
+
+```ts
+import { describe, it, expect, vi } from 'vitest';
+import { functionUnderTest } from '../../../src/module/file';
+
+describe('functionUnderTest', () => {
+  describe('when given valid input', () => {
+    it('should return expected output', () => {
+      const result = functionUnderTest(input);
+      expect(result).toEqual(expectedOutput);
+    });
+  });
+
+  describe('when given edge case input', () => {
+    it('should handle null gracefully', () => {
+      expect(() => functionUnderTest(null)).toThrow(SomeTypedError);
+    });
+  });
+});
+```
+
+---
+
+## 8. Testing Rules
 
 ### Coverage Requirements
 - **Minimum 90% line coverage** for `src/` code.
@@ -198,7 +296,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 8. Build & Distribution
+## 9. Build & Distribution
 
 ### Build Output
 - **ESM** (`dist/esm/`) — for modern bundlers and Node.js with `"type": "module"`.
@@ -237,7 +335,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 9. API Design Rules
+## 10. API Design Rules
 
 - **Minimal surface area.** Export only what users need. Internal utilities stay internal.
 - **Progressive disclosure.** Simple use case = one function call. Advanced use case = class with methods. Never force advanced configuration on simple users.
@@ -251,7 +349,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 10. Documentation Rules
+## 11. Documentation Rules
 
 - Every public function, class, method, and type must have a **TSDoc comment** with:
   - A one-line summary.
@@ -266,7 +364,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 11. Performance Rules
+## 12. Performance Rules
 
 - **No premature optimization.** Write clear code first. Optimize only when profiling identifies a bottleneck.
 - **Cache expensive operations.** Font embedding, image embedding, and color parsing results must be cached within a single conversion run.
@@ -276,7 +374,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 12. Security Rules
+## 13. Security Rules
 
 - **Never execute user-provided code.** The library processes data (JSON, font bytes, image bytes), not code.
 - **Validate image URLs** if an image resolver is provided. The library itself must not make network requests — that is the user's responsibility via `imageResolver`.
@@ -287,25 +385,100 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 13. Git & Commit Conventions
+## 14. Git & Commit Conventions
 
-- **Branch naming:** `feature/{name}`, `fix/{name}`, `refactor/{name}`, `docs/{name}`.
-- **Commit messages:** Follow [Conventional Commits](https://www.conventionalcommits.org/):
-  ```
-  feat(renderer): add circle renderer with full transform support
-  fix(text): correct baseline calculation for fonts with large descenders
-  refactor(transform): extract matrix composition into standalone utility
-  test(path): add visual regression test for cubic bezier paths
-  docs: add API reference for FabricToPdfConverter class
-  chore: update dev dependencies
-  ```
-- **One logical change per commit.** Do not mix feature work with refactoring.
-- **Never commit:** `node_modules/`, `dist/`, `.env`, editor config files, OS files (`.DS_Store`).
+### Commit Messages
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/) strictly:
+
+```
+<type>(<scope>): <short description>
+
+[optional body — explain WHY, not WHAT]
+
+[optional footer — e.g., BREAKING CHANGE: ...]
+```
+
+**Types:**
+- `feat` — New functionality (a new renderer, a new API method, a new utility function).
+- `test` — Adding or updating tests (no production code changes).
+- `fix` — Bug fix in existing functionality.
+- `refactor` — Code restructuring with no behavior change. All tests must remain green.
+- `chore` — Tooling, config, dependency updates. No production code changes.
+- `docs` — Documentation changes only.
+
+**Scopes** (match the `src/` module):
+- `transform`, `color`, `renderer`, `text`, `image`, `font`, `core`, `api`, `types`, `errors`, `build`, `ci`.
+
+**Examples:**
+```
+test(transform): add tests for matrix composition with skew and flip
+feat(transform): implement composeMatrix with full Fabric.js transform order
+refactor(transform): extract degreesToRadians into standalone helper
+
+test(color): add tests for HSL and HSLA color parsing
+feat(color): implement parseColor with hex, rgb, rgba, hsl, named colors
+
+test(renderer): add tests for rect renderer with rounded corners
+feat(renderer): implement rect renderer with drawRectangle and SVG path fallback
+
+chore(build): configure tsup for dual ESM/CJS output
+docs: add quick start guide to README
+```
+
+### Commit-Per-Feature Workflow
+
+**Every completed subtask from EPICS.md results in at least two commits** following the TDD cycle:
+
+```
+Step 1: test(<scope>): add tests for <feature>
+        └── Contains ONLY test files. Tests must fail at this point.
+           (The test runner may error on missing imports — that is expected.)
+
+Step 2: feat(<scope>): implement <feature>
+        └── Contains ONLY implementation files. All tests pass after this commit.
+
+Step 3: refactor(<scope>): <description>     [optional, only if refactoring occurs]
+        └── Contains code improvements. All tests still pass.
+```
+
+**Rules:**
+- **Test commit first, always.** The `test(...)` commit is made before the `feat(...)` commit. This is enforced by the TDD workflow. The failing tests prove the feature did not exist before.
+- **One logical unit per commit pair.** A test+feat pair covers one subtask or one logically cohesive piece of functionality. Do not bundle multiple unrelated features into one commit.
+- **Never mix test and implementation in the same commit.** A `feat(...)` commit must not contain test file changes. A `test(...)` commit must not contain implementation file changes. This rule makes the TDD workflow auditable from the git log.
+- **All tests must pass after every `feat(...)` and `refactor(...)` commit.** Run `npm test` before committing. If tests fail, fix the code before committing. Never commit broken code.
+- **Commit early and often.** Do not accumulate large uncommitted changes. Smaller, focused commits are easier to review, revert, and bisect.
+
+### Commit Frequency Guidelines
+
+| Work Type | Commit Frequency |
+|---|---|
+| Type definitions (Epic 2) | One commit per file or related group of types |
+| Utility functions (Epic 3) | test + feat commit pair per function/module |
+| Each renderer (Epics 5-7) | test + feat commit pair per renderer |
+| Text renderer features (Epic 9) | test + feat pair per sub-feature (alignment, wrapping, etc.) |
+| Integration tests (Epic 12) | One commit per test suite/fixture |
+| Config/tooling (Epic 1) | One `chore(...)` commit per tool configured |
+
+### Branch Strategy
+
+- **`main`** — Always stable. All tests pass. This is the release branch.
+- **`feature/{name}`** — Active development for a feature or epic.
+- **`fix/{name}`** — Bug fixes.
+- **`refactor/{name}`** — Refactoring work.
+- **`docs/{name}`** — Documentation changes.
+
+### General Git Rules
+
+- **One logical change per commit.** Do not mix feature work with refactoring or tooling.
+- **Never commit:** `node_modules/`, `dist/`, `.env`, editor config files, OS files (`.DS_Store`), `coverage/`.
+- **Never use `--no-verify`** to bypass pre-commit hooks.
+- **Write meaningful commit messages.** The subject line must make sense when read in `git log --oneline`. A reviewer should understand what changed without reading the diff.
 - **PR requirements:** All PRs must pass CI (build, lint, test). PRs must have a description explaining what and why.
 
 ---
 
-## 14. Dependency Management
+## 15. Dependency Management
 
 - **Minimize dependencies.** Every new dependency must be justified in the PR description.
 - **No dependencies for trivial utilities.** Color parsing, matrix math, SVG path construction — write these ourselves. They are core to the library and must be fast, correct, and dependency-free.
@@ -316,7 +489,7 @@ npm run test:coverage # With coverage report
 
 ---
 
-## 15. CI/CD Pipeline
+## 16. CI/CD Pipeline
 
 The CI pipeline must run on every push and PR:
 
@@ -330,7 +503,7 @@ The CI pipeline must run on every push and PR:
 
 ---
 
-## 16. Release Checklist
+## 17. Release Checklist
 
 Before every npm publish:
 
@@ -346,12 +519,15 @@ Before every npm publish:
 
 ---
 
-## 17. Code Review Checklist
+## 18. Code Review Checklist
 
 When reviewing PRs, verify:
 
 - [ ] Does it follow the naming conventions in this document?
 - [ ] Is the code covered by tests?
+- [ ] Were tests written before implementation? (Check commit order: `test(...)` before `feat(...)`.)
+- [ ] Are test and implementation changes in separate commits?
+- [ ] Do tests assert behavior, not implementation details?
 - [ ] Are new types properly exported if they are part of the public API?
 - [ ] Does it introduce any circular dependencies?
 - [ ] Does it handle errors correctly (typed errors, not generic throws)?
@@ -360,3 +536,4 @@ When reviewing PRs, verify:
 - [ ] Are there any `any` types? (There must not be.)
 - [ ] Does it work in both browser and Node.js?
 - [ ] Is the commit message following Conventional Commits?
+- [ ] Do all tests pass at every commit in the PR? (No broken intermediate commits.)

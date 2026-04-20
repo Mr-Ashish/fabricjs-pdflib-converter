@@ -123,11 +123,8 @@ function parseHexColor(hex: string): ColorResult | null {
     r: roundTo3Decimals(clamp(r, 0, 1)),
     g: roundTo3Decimals(clamp(g, 0, 1)),
     b: roundTo3Decimals(clamp(b, 0, 1)),
+    a: a !== undefined ? roundTo3Decimals(clamp(a, 0, 1)) : 1,
   };
-
-  if (a !== undefined) {
-    result.alpha = roundTo3Decimals(clamp(a, 0, 1));
-  }
 
   return result;
 }
@@ -154,17 +151,14 @@ function parseRgbColor(rgb: string): ColorResult | null {
   const r = parseColorComponent(parts[0]!);
   const g = parseColorComponent(parts[1]!);
   const b = parseColorComponent(parts[2]!);
-  const a = parts[3] !== undefined ? parseAlpha(parts[3]) : undefined;
+  const a = parts[3] !== undefined ? parseAlpha(parts[3]) : 1;
 
   const result: ColorResult = {
     r: roundTo3Decimals(clamp(r, 0, 1)),
     g: roundTo3Decimals(clamp(g, 0, 1)),
     b: roundTo3Decimals(clamp(b, 0, 1)),
+    a: roundTo3Decimals(clamp(a, 0, 1)),
   };
-
-  if (a !== undefined) {
-    result.alpha = roundTo3Decimals(clamp(a, 0, 1));
-  }
 
   return result;
 }

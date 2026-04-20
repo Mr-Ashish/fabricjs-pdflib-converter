@@ -82,7 +82,7 @@ export function parseCanvasJSON(input: unknown): FabricCanvasJSON {
     }
   }
 
-  return canvasObj as FabricCanvasJSON;
+  return canvasObj as unknown as FabricCanvasJSON;
 }
 
 /**
@@ -183,11 +183,11 @@ export async function convertCanvasToPdf(
   // Add a page with specified dimensions
   const page = pdfDoc.addPage([options.pageWidth, options.pageHeight]);
 
-  // Set up font manager
-  const fontManager = new FontManager(pdfDoc, options.fonts, options.defaultFont);
+  // Set up font manager (fontRegistry, defaultFont, pdfDoc)
+  const fontManager = new FontManager(options.fonts, options.defaultFont, pdfDoc);
 
-  // Set up image loader
-  const imageLoader = new ImageLoader(pdfDoc, options.imageResolver);
+  // Set up image loader (imageResolver, pdfDoc)
+  const imageLoader = new ImageLoader(options.imageResolver, pdfDoc);
 
   // Set up warning collector
   const warnings = new WarningCollector();

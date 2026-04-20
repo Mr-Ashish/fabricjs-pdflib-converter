@@ -22,7 +22,7 @@ export { FontManager } from './fonts/font-manager';
 export { STANDARD_FONT_MAP } from './fonts/standard-fonts';
 
 // Renderer registry
-export { createDefaultRegistry, RendererRegistryImpl } from './renderers/registry';
+export { createDefaultRegistry, RendererRegistry } from './renderers/registry';
 export { BaseRenderer } from './renderers/base-renderer';
 
 // Transform utilities
