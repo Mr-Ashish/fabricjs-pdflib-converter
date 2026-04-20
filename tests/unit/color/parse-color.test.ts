@@ -6,7 +6,7 @@ describe('parseColor', () => {
   describe('hex colors', () => {
     it('should parse 6-digit hex', () => {
       const result = parseColor('#FF5733');
-      expect(result).toEqual({ r: 1, g: 0.337, b: 0.2 });
+      expect(result).toEqual({ r: 1, g: 0.341, b: 0.2 });
     });
 
     it('should parse 3-digit hex', () => {
@@ -16,7 +16,7 @@ describe('parseColor', () => {
 
     it('should parse 8-digit hex with alpha', () => {
       const result = parseColor('#FF573380');
-      expect(result).toEqual({ r: 1, g: 0.337, b: 0.2, alpha: 0.502 });
+      expect(result).toEqual({ r: 1, g: 0.341, b: 0.2, alpha: 0.502 });
     });
 
     it('should parse 4-digit hex with alpha', () => {
@@ -26,12 +26,12 @@ describe('parseColor', () => {
 
     it('should handle lowercase hex', () => {
       const result = parseColor('#ff5733');
-      expect(result).toEqual({ r: 1, g: 0.337, b: 0.2 });
+      expect(result).toEqual({ r: 1, g: 0.341, b: 0.2 });
     });
 
     it('should handle hex without hash', () => {
       const result = parseColor('FF5733');
-      expect(result).toEqual({ r: 1, g: 0.337, b: 0.2 });
+      expect(result).toEqual({ r: 1, g: 0.341, b: 0.2 });
     });
   });
 
@@ -90,7 +90,7 @@ describe('parseColor', () => {
 
   describe('edge cases', () => {
     it('should handle whitespace', () => {
-      expect(parseColor('  #FF5733  ')).toEqual({ r: 1, g: 0.337, b: 0.2 });
+      expect(parseColor('  #FF5733  ')).toEqual({ r: 1, g: 0.341, b: 0.2 });
       expect(parseColor('  red  ')).toEqual({ r: 1, g: 0, b: 0 });
     });
 
