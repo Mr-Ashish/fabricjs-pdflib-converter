@@ -33,6 +33,9 @@ function createMockObject(overrides: Partial<FabricObject> = {}): FabricObject {
     fill: null,
     stroke: null,
     strokeWidth: 0,
+    strokeDashArray: null,
+    strokeLineCap: 'butt',
+    strokeLineJoin: 'miter',
     opacity: 1,
     visible: true,
     ...overrides,
@@ -126,6 +129,65 @@ describe('BaseRenderer', () => {
       const context = createMockContext();
 
       expect(() => renderer.render(obj, context.page, context)).toThrow('Render error');
+    });
+  });
+
+  describe('applyStrokeProperties', () => {
+    it('should apply dash array when provided', () => {
+      const renderer = new MockRenderer();
+      const page = {
+        pushOperators: vi.fn(),
+      } as unknown as PDFPage;
+
+      renderer.applyStrokeProperties(page, [5, 5], 'butt', 'miter', 1);
+
+      expect(page.pushOperators).toHaveBeenCalled();
+    });
+
+    it('should not apply dash array when null', () => {
+      const renderer = new MockRenderer();
+      const page = {
+        pushOperators: vi.fn(),
+      } as unknown as PDFPage;
+
+      renderer.applyStrokeProperties(page, null, 'butt', 'miter', 1);
+
+      expect(page.pushOperators).not.toHaveBeenCalled();
+    });
+
+    it('should map line cap values correctly', () => {
+      const renderer = new MockRenderer();
+      const page = {
+        pushOperators: vi.fn(),
+      } as unknown as PDFPage;
+
+      // Test that it doesn't throw for valid values
+      expect(() => renderer.applyStrokeProperties(page, null, 'butt', 'miter', 1)).not.toThrow();
+      expect(() => renderer.applyStrokeProperties(page, null, 'round', 'miter', 1)).not.toThrow();
+      expect(() => renderer.applyStrokeProperties(page, null, 'square', 'miter', 1)).not.toThrow();
+    });
+
+    it('should map line join values correctly', () => {
+      const renderer = new MockRenderer();
+      const page = {
+        pushOperators: vi.fn(),
+      } as unknown as PDFPage;
+
+      // Test that it doesn't throw for valid values
+      expect(() => renderer.applyStrokeProperties(page, null, 'butt', 'miter', 1)).not.toThrow();
+      expect(() => renderer.applyStrokeProperties(page, null, 'butt', 'round', 1)).not.toThrow();
+      expect(() => renderer.applyStrokeProperties(page, null, 'butt', 'bevel', 1)).not.toThrow();
+    });
+
+    it('should apply all stroke properties together', () => {
+      const renderer = new MockRenderer();
+      const page = {
+        pushOperators: vi.fn(),
+      } as unknown as PDFPage;
+
+      renderer.applyStrokeProperties(page, [10, 5], 'round', 'bevel', 1);
+
+      expect(page.pushOperators).toHaveBeenCalled();
     });
   });
 });
