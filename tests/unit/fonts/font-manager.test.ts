@@ -6,13 +6,17 @@ import type { FontRegistry } from '../../../src/types';
 
 // Mock PDFDocument
 function createMockPDFDocument() {
-  const mockFont = {
-    widthOfTextAtSize: vi.fn().mockReturnValue(100),
-    heightAtSize: vi.fn().mockReturnValue(12),
-  } as unknown as PDFFont;
+  let callCount = 0;
 
   return {
-    embedFont: vi.fn().mockResolvedValue(mockFont),
+    embedFont: vi.fn().mockImplementation(() => {
+      callCount++;
+      return Promise.resolve({
+        widthOfTextAtSize: vi.fn().mockReturnValue(100),
+        heightAtSize: vi.fn().mockReturnValue(12),
+        _id: callCount, // Unique ID for each call
+      } as unknown as PDFFont);
+    }),
   } as unknown as PDFDocument;
 }
 
@@ -39,7 +43,7 @@ describe('FontManager', () => {
 
     it('should resolve Times-Roman', async () => {
       const pdfDoc = createMockPDFDocument();
-      const manager = new FontManager({}, 'Times-Roman', 'normal', 'normal');
+      const manager = new FontManager({}, 'Times-Roman', pdfDoc);
 
       const font = await manager.resolve('Times-Roman', 'normal', 'normal');
       expect(font).toBeDefined();
