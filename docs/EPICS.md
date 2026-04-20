@@ -85,12 +85,12 @@ Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only s
 ### Subtasks
 
 #### 2.1 Fabric.js JSON type definitions (`src/types/fabric.ts`)
-- [ ] Define `FabricCanvasJSON` — the top-level shape of `canvas.toJSON()` output:
+- [x] Define `FabricCanvasJSON` — the top-level shape of `canvas.toJSON()` output:
   - `version: string`
   - `objects: FabricObject[]`
   - `background?: string`
   - `backgroundImage?: FabricImageObject`
-- [ ] Define `FabricObjectBase` — shared properties across all object types:
+- [x] Define `FabricObjectBase` — shared properties across all object types:
   - `type: string`
   - `left`, `top`, `width`, `height`: `number`
   - `scaleX`, `scaleY`: `number`
@@ -111,7 +111,7 @@ Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only s
   - `globalCompositeOperation?: string`
   - `shadow?: FabricShadow | null`
   - `strokeUniform?: boolean`
-- [ ] Define specific object types extending `FabricObjectBase`:
+- [x] Define specific object types extending `FabricObjectBase`:
   - `FabricRectObject` — adds `rx`, `ry`
   - `FabricCircleObject` — adds `radius`, `startAngle`, `endAngle`
   - `FabricEllipseObject` — adds `rx`, `ry`
@@ -123,11 +123,11 @@ Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only s
   - `FabricTextObject` — adds `text`, `fontFamily`, `fontSize`, `fontWeight`, `fontStyle`, `textAlign`, `lineHeight`, `underline`, `linethrough`, `overline`, `charSpacing`, `textBackgroundColor`, `styles`
   - `FabricImageObject` — adds `src`, `cropX`, `cropY`, `filters`
   - `FabricGroupObject` — adds `objects: FabricObject[]`
-- [ ] Define `FabricObject` as a discriminated union of all specific types (discriminated on `type` field).
-- [ ] Define helper types: `PathCommand`, `FabricGradient`, `FabricShadow`, `FabricTextStyle`, `FabricTextStyles`.
+- [x] Define `FabricObject` as a discriminated union of all specific types (discriminated on `type` field).
+- [x] Define helper types: `PathCommand`, `FabricGradient`, `FabricShadow`, `FabricTextStyle`, `FabricTextStyles`.
 
 #### 2.2 Converter options types (`src/types/options.ts`)
-- [ ] Define `ConverterOptions`:
+- [x] Define `ConverterOptions`:
   - `pageWidth?: number`
   - `pageHeight?: number`
   - `scale?: number`
@@ -139,15 +139,15 @@ Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only s
   - `backgroundColor?: string`
   - `margin?: MarginConfig`
   - `maxGroupDepth?: number`
-- [ ] Define `FontRegistry` — map of font family name to `FontVariants`.
-- [ ] Define `FontVariants` — `{ regular?: ArrayBuffer | Uint8Array, bold?: ..., italic?: ..., boldItalic?: ... }`.
-- [ ] Define `ImageResolver` — `(src: string) => Promise<ArrayBuffer | Uint8Array>`.
-- [ ] Define `MarginConfig` — `{ top: number, right: number, bottom: number, left: number }`.
-- [ ] Define `PageOptions` — per-page overrides for the advanced API.
+- [x] Define `FontRegistry` — map of font family name to `FontVariants`.
+- [x] Define `FontVariants` — `{ regular?: ArrayBuffer | Uint8Array, bold?: ..., italic?: ..., boldItalic?: ... }`.
+- [x] Define `ImageResolver` — `(src: string) => Promise<ArrayBuffer | Uint8Array>`.
+- [x] Define `MarginConfig` — `{ top: number, right: number, bottom: number, left: number }`.
+- [x] Define `PageOptions` — per-page overrides for the advanced API.
 
 #### 2.3 Renderer interface types (`src/types/renderer.ts`)
-- [ ] Define `ObjectRenderer` interface per AGENTS.md Section 5.
-- [ ] Define `RenderContext` — the shared state passed to every renderer:
+- [x] Define `ObjectRenderer` interface per AGENTS.md Section 5.
+- [x] Define `RenderContext` — the shared state passed to every renderer:
   - `pdfDoc: PDFDocument`
   - `page: PDFPage`
   - `fontManager: FontManager`
@@ -156,23 +156,23 @@ Subtasks that are config/tooling only use `chore(<scope>):` commits. Type-only s
   - `warnings: WarningCollector`
   - `renderObject: (obj: FabricObject) => Promise<void>` — callback for recursive group rendering
   - `currentDepth: number`
-- [ ] Define `ResolvedConverterOptions` — the fully resolved, defaults-applied version of `ConverterOptions`.
-- [ ] Define `ConversionWarning` — structured warning type per PLAN.md Section 7.
-- [ ] Define `ConversionResult` — `{ pdfBytes: Uint8Array, warnings: ConversionWarning[] }`.
+- [x] Define `ResolvedConverterOptions` — the fully resolved, defaults-applied version of `ConverterOptions`.
+- [x] Define `ConversionWarning` — structured warning type per PLAN.md Section 7.
+- [x] Define `ConversionResult` — `{ pdfBytes: Uint8Array, warnings: ConversionWarning[] }`.
 
 #### 2.4 Internal utility types
-- [ ] Define `TransformMatrix` as `[number, number, number, number, number, number]` (6-element affine matrix).
-- [ ] Define `Point` as `{ x: number, y: number }`.
-- [ ] Define `ColorResult` as `{ r: number, g: number, b: number, a: number }` (0-1 range).
-- [ ] Define `ResolvedColor` as `{ pdfColor: RGB | null, opacity: number }`.
+- [x] Define `TransformMatrix` as `[number, number, number, number, number, number]` (6-element affine matrix).
+- [x] Define `Point` as `{ x: number, y: number }`.
+- [x] Define `ColorResult` as `{ r: number, g: number, b: number, a: number }` (0-1 range).
+- [x] Define `ResolvedColor` as `{ pdfColor: RGB | null, opacity: number }`.
 
 #### 2.5 Export all types
-- [ ] Re-export all public types from `src/types/index.ts`.
-- [ ] Re-export from `src/index.ts` the types users need: `ConverterOptions`, `ConversionWarning`, `ConversionResult`, `FontRegistry`, `FontVariants`, `ImageResolver`, `ObjectRenderer`, `RenderContext`.
+- [x] Re-export all public types from `src/types/index.ts`.
+- [x] Re-export from `src/index.ts` the types users need.
 
 **Commit pattern for this epic:** `feat(types):` commits (no TDD for pure type definitions). One commit per subtask or logical group.
 
-**Exit criteria:** `npm run build` succeeds. All types compile. No `any` usage. Types are importable from the package entry point. Each subtask has its own commit.
+**Exit criteria:** `npm run build` succeeds. All types compile. No `any` usage. Types are importable from the package entry point. Each subtask has its own commit. ✅ **COMPLETE**
 
 ---
 
