@@ -1,4 +1,12 @@
 import type { ObjectRenderer } from '../types';
+import { RectRenderer } from './rect.renderer';
+import { CircleRenderer } from './circle.renderer';
+import { EllipseRenderer } from './ellipse.renderer';
+import { TriangleRenderer } from './triangle.renderer';
+import { LineRenderer } from './line.renderer';
+import { PathRenderer } from './path.renderer';
+import { PolylineRenderer } from './polyline.renderer';
+import { PolygonRenderer } from './polygon.renderer';
 
 /**
  * Registry that maps Fabric.js object type strings to their renderers.
@@ -49,18 +57,24 @@ export class RendererRegistry {
 
 /**
  * Factory function that creates a registry with all built-in renderers.
- * Currently returns an empty registry - renderers will be registered
- * in subsequent epics (5-10).
+ * Registers shape renderers from Epic 5.
  *
  * @returns A new RendererRegistry instance
  */
 export function createDefaultRegistry(): RendererRegistry {
   const registry = new RendererRegistry();
 
-  // Built-in renderers will be registered here in Epics 5-10:
-  // registry.register(new RectRenderer());
-  // registry.register(new CircleRenderer());
-  // etc.
+  // Shape renderers (Epic 5)
+  registry.register(new RectRenderer());
+  registry.register(new CircleRenderer());
+  registry.register(new EllipseRenderer());
+  registry.register(new TriangleRenderer());
+  registry.register(new LineRenderer());
+
+  // Vector path renderers (Epic 6)
+  registry.register(new PathRenderer());
+  registry.register(new PolylineRenderer());
+  registry.register(new PolygonRenderer());
 
   return registry;
 }

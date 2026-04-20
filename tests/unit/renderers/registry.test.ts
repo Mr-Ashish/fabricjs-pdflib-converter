@@ -119,8 +119,16 @@ describe('createDefaultRegistry', () => {
     expect(registry).toBeInstanceOf(RendererRegistry);
   });
 
-  it('should return empty registry initially', () => {
+  it('should return registry with all built-in renderers registered', () => {
     const registry = createDefaultRegistry();
-    expect(registry.getAll().size).toBe(0);
+    expect(registry.getAll().size).toBe(8); // 5 shape + 3 vector path renderers
+    expect(registry.has('rect')).toBe(true);
+    expect(registry.has('circle')).toBe(true);
+    expect(registry.has('ellipse')).toBe(true);
+    expect(registry.has('triangle')).toBe(true);
+    expect(registry.has('line')).toBe(true);
+    expect(registry.has('path')).toBe(true);
+    expect(registry.has('polyline')).toBe(true);
+    expect(registry.has('polygon')).toBe(true);
   });
 });
