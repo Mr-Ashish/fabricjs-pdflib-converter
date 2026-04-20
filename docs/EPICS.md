@@ -329,48 +329,48 @@ feat(renderer): implement RendererRegistry with type-based dispatch
 ### Subtasks
 
 #### 5.1 Rect renderer (`src/renderers/rect.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'rect'`.
-- [ ] Implement `renderObject`:
+- [x] Extend `BaseRenderer` with `type = 'rect'`.
+- [x] Implement `renderObject`:
   - If `rx` and `ry` are both 0 or absent: use `page.drawRectangle()` with mapped position, dimensions, color, border.
   - If rounded corners: generate SVG path via `roundedRectToSvgPath` and use `page.drawSvgPath()`.
-- [ ] Map properties: `width` -> `width`, `height` -> `height`, `fill` -> `color`, `stroke` -> `borderColor`, `strokeWidth` -> `borderWidth`.
-- [ ] Handle `fill: null` (no fill, only stroke) and `stroke: null` (no stroke, only fill).
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests: basic rect, rounded rect, fill only, stroke only, fill+stroke, no fill no stroke, zero dimensions.
+- [x] Map properties: `width` -> `width`, `height` -> `height`, `fill` -> `color`, `stroke` -> `borderColor`, `strokeWidth` -> `borderWidth`.
+- [x] Handle `fill: null` (no fill, only stroke) and `stroke: null` (no stroke, only fill).
+- [x] Register in `registry.ts`.
+- [x] Write unit tests: basic rect, rounded rect, fill only, stroke only, fill+stroke, no fill no stroke, zero dimensions.
 
 #### 5.2 Circle renderer (`src/renderers/circle.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'circle'`.
-- [ ] Map `radius` to `page.drawCircle()` `size` parameter.
-- [ ] Handle `startAngle` / `endAngle` for arcs (if both present and differ from 0/360, use SVG arc path instead).
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests: full circle, with stroke, partial arc.
+- [x] Extend `BaseRenderer` with `type = 'circle'`.
+- [x] Map `radius` to `page.drawCircle()` `size` parameter.
+- [x] Handle `startAngle` / `endAngle` for arcs (if both present and differ from 0/360, use SVG arc path instead).
+- [x] Register in `registry.ts`.
+- [x] Write unit tests: full circle, with stroke, partial arc.
 
 #### 5.3 Ellipse renderer (`src/renderers/ellipse.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'ellipse'`.
-- [ ] Map `rx`, `ry` to `page.drawEllipse()` `xScale`, `yScale` parameters.
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests.
+- [x] Extend `BaseRenderer` with `type = 'ellipse'`.
+- [x] Map `rx`, `ry` to `page.drawEllipse()` `xScale`, `yScale` parameters.
+- [x] Register in `registry.ts`.
+- [x] Write unit tests.
 
 #### 5.4 Triangle renderer (`src/renderers/triangle.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'triangle'`.
-- [ ] Use `triangleToSvgPath(width, height)` to generate path.
-- [ ] Render via `page.drawSvgPath()`.
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests.
+- [x] Extend `BaseRenderer` with `type = 'triangle'`.
+- [x] Use `triangleToSvgPath(width, height)` to generate path.
+- [x] Render via `page.drawSvgPath()`.
+- [x] Register in `registry.ts`.
+- [x] Write unit tests.
 
 #### 5.5 Line renderer (`src/renderers/line.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'line'`.
-- [ ] Map Fabric's `x1`, `y1`, `x2`, `y2` (relative to bounding box center) to `page.drawLine()`.
-- [ ] Handle coordinate adjustment (Fabric Line positions x1/y1/x2/y2 relative to the object's center).
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests: horizontal line, vertical line, diagonal, with stroke color/width.
+- [x] Extend `BaseRenderer` with `type = 'line'`.
+- [x] Map Fabric's `x1`, `y1`, `x2`, `y2` (relative to bounding box center) to `page.drawLine()`.
+- [x] Handle coordinate adjustment (Fabric Line positions x1/y1/x2/y2 relative to the object's center).
+- [x] Register in `registry.ts`.
+- [x] Write unit tests: horizontal line, vertical line, diagonal, with stroke color/width.
 
 #### 5.6 Integration test: basic shapes
-- [ ] Create a Fabric.js JSON fixture (`tests/fixtures/basic-shapes.json`) containing one of each shape type with various fills, strokes, and positions.
-- [ ] Write an integration test that converts the fixture to PDF bytes and verifies:
+- [x] Create a Fabric.js JSON fixture (`tests/fixtures/basic-shapes.json`) containing one of each shape type with various fills, strokes, and positions.
+- [x] Write an integration test that converts the fixture to PDF bytes and verifies:
   - PDF bytes are valid (non-empty, start with `%PDF`).
   - Correct number of content stream operators (rough check).
-- [ ] Optional: render the PDF to an image and visually verify.
+- [x] Optional: render the PDF to an image and visually verify.
 
 **Commit pattern for this epic:** Strict TDD. Each renderer (5.1-5.5) is a test+feat commit pair. The integration test (5.6) is a standalone `test(renderer):` commit.
 ```
@@ -382,7 +382,7 @@ feat(renderer): implement circle renderer
 test(renderer): add integration test for basic shapes
 ```
 
-**Exit criteria:** All 5 shape renderers pass unit tests. Integration test produces a valid PDF. Shapes appear at correct positions with correct colors (verified via visual test or operator inspection).
+**Exit criteria:** All 5 shape renderers pass unit tests. Integration test produces a valid PDF. Shapes appear at correct positions with correct colors (verified via visual test or operator inspection). ✅ **COMPLETE** — 236 tests passing, all 5 shape renderers implemented and registered.
 
 ---
 
