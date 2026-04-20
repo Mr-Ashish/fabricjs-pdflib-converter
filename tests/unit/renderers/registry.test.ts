@@ -121,7 +121,7 @@ describe('createDefaultRegistry', () => {
 
   it('should return registry with all built-in renderers registered', () => {
     const registry = createDefaultRegistry();
-    expect(registry.getAll().size).toBe(10); // 5 shape + 3 vector path + 1 image + 1 text renderers
+    expect(registry.getAll().size).toBe(11); // 5 shape + 3 vector path + 1 image + 1 text + 1 group renderers
     expect(registry.has('rect')).toBe(true);
     expect(registry.has('circle')).toBe(true);
     expect(registry.has('ellipse')).toBe(true);
@@ -132,5 +132,6 @@ describe('createDefaultRegistry', () => {
     expect(registry.has('polygon')).toBe(true);
     expect(registry.has('image')).toBe(true);
     expect(registry.has('text')).toBe(true);
+    expect(registry.has('group')).toBe(true);
   });
 });
