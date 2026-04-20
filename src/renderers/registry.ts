@@ -8,6 +8,7 @@ import { PathRenderer } from './path.renderer';
 import { PolylineRenderer } from './polyline.renderer';
 import { PolygonRenderer } from './polygon.renderer';
 import { ImageRenderer } from './image.renderer';
+import { TextRenderer } from './text.renderer';
 
 /**
  * Registry that maps Fabric.js object type strings to their renderers.
@@ -79,6 +80,9 @@ export function createDefaultRegistry(): RendererRegistry {
 
   // Image renderer (Epic 7)
   registry.register(new ImageRenderer());
+
+  // Text renderer (Epic 9)
+  registry.register(new TextRenderer());
 
   return registry;
 }
