@@ -4,12 +4,7 @@
 
 import type { PDFDocument, PDFPage, PDFFont, PDFImage, RGB } from 'pdf-lib';
 import type { FabricObject } from './fabric';
-import type {
-  FontRegistry,
-  ImageResolver,
-  ResolvedConverterOptions,
-  ConversionWarning,
-} from './options';
+import type { ResolvedConverterOptions, ConversionWarning } from './options';
 
 // ============================================================================
 // Color Types

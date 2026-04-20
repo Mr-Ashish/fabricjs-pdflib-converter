@@ -2,7 +2,7 @@
  * Type definitions for converter configuration and options.
  */
 
-import type { FabricObject } from './fabric';
+
 
 // ============================================================================
 // Font Types

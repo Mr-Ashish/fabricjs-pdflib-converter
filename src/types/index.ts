@@ -1,1 +1,72 @@
-// Type definitions for Fabric.js JSON and converter options
+// Type definitions for Fabric.js JSON and converter configuration
+
+// Fabric.js object types
+export type {
+  OriginX,
+  OriginY,
+  StrokeLineCap,
+  StrokeLineJoin,
+  TextAlign,
+  FontWeight,
+  FontStyle,
+  GradientColorStop,
+  LinearGradient,
+  RadialGradient,
+  FabricGradient,
+  FabricPattern,
+  FabricShadow,
+  PathCommandType,
+  PathCommand,
+  FabricTextStyle,
+  FabricTextStyles,
+  FabricObjectBase,
+  FabricRectObject,
+  FabricCircleObject,
+  FabricEllipseObject,
+  FabricTriangleObject,
+  FabricLineObject,
+  FabricPoint,
+  FabricPolylineObject,
+  FabricPolygonObject,
+  FabricPathObject,
+  FabricImageFilter,
+  FabricImageObject,
+  FabricTextBase,
+  FabricTextObject,
+  FabricITextObject,
+  FabricTextboxObject,
+  FabricGroupObject,
+  FabricObject,
+  FabricBackgroundImage,
+  FabricCanvasJSON,
+} from './fabric';
+
+// Converter options types
+export type {
+  FontVariants,
+  FontRegistry,
+  ImageResolver,
+  MarginConfig,
+  WarningType,
+  UnsupportedStrategy,
+  ConversionWarning,
+  WarningHandler,
+  ConverterOptions,
+  ResolvedConverterOptions,
+  PageOptions,
+  ConversionResult,
+} from './options';
+
+// Renderer and context types
+export type {
+  ColorResult,
+  ResolvedColor,
+  TransformMatrix,
+  Point,
+  FontManager,
+  ImageLoader,
+  WarningCollector,
+  RenderContext,
+  ObjectRenderer,
+  RendererRegistry,
+} from './renderer';
