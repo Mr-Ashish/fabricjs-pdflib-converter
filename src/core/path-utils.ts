@@ -105,6 +105,31 @@ export function svgPathToPdfOps(svgPath: string): PdfPathOp[] {
 }
 
 /**
+ * Converts an array of points to an SVG path string.
+ *
+ * @param points - Array of {x, y} points
+ * @param closePath - Whether to close the path with Z command
+ * @returns SVG path string
+ */
+export function pointsToSvgPath(points: Array<{ x: number; y: number }>, closePath: boolean): string {
+  if (points.length === 0) {
+    return '';
+  }
+
+  let path = `M ${points[0]!.x} ${points[0]!.y}`;
+
+  for (let i = 1; i < points.length; i++) {
+    path += ` L ${points[i]!.x} ${points[i]!.y}`;
+  }
+
+  if (closePath) {
+    path += ' Z';
+  }
+
+  return path;
+}
+
+/**
  * Scales all coordinates in path commands by a factor.
  *
  * @param commands - Array of path commands
