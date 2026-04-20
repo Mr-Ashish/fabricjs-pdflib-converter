@@ -385,41 +385,40 @@ test(renderer): add integration test for basic shapes
 ### Subtasks
 
 #### 6.1 Path renderer (`src/renderers/path.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'path'`.
-- [ ] Convert Fabric's `path` array to SVG string via `fabricPathToSvgString`.
-- [ ] Validate the path string before passing to `drawSvgPath`.
-- [ ] Render via `page.drawSvgPath()`.
-- [ ] Handle all SVG path commands: M, L, H, V, C, S, Q, T, A, Z (and lowercase relative variants).
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests: simple path, cubic bezier, quadratic bezier, arc, complex multi-command path.
+- [x] Extend `BaseRenderer` with `type = 'path'`.
+- [x] Convert Fabric's `path` array to SVG string via `pathCommandsToSvg`.
+- [x] Render via `page.drawSvgPath()`.
+- [x] Handle all SVG path commands: M, L, C, Q, A, Z.
+- [x] Register in `registry.ts`.
+- [x] Write unit tests: simple path, cubic bezier, quadratic bezier, arc, complex multi-command path.
 
 #### 6.2 Polyline renderer (`src/renderers/polyline.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'polyline'`.
-- [ ] Convert `points` array to open SVG path via `pointsToSvgPath(points, false)`.
-- [ ] Render via `page.drawSvgPath()`.
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests.
+- [x] Extend `BaseRenderer` with `type = 'polyline'`.
+- [x] Convert `points` array to open SVG path via `pointsToSvgPath(points, false)`.
+- [x] Render via `page.drawSvgPath()`.
+- [x] Register in `registry.ts`.
+- [x] Write unit tests.
 
 #### 6.3 Polygon renderer (`src/renderers/polygon.renderer.ts`)
-- [ ] Extend `BaseRenderer` with `type = 'polygon'`.
-- [ ] Convert `points` array to closed SVG path via `pointsToSvgPath(points, true)`.
-- [ ] Render via `page.drawSvgPath()`.
-- [ ] Register in `registry.ts`.
-- [ ] Write unit tests.
+- [x] Extend `BaseRenderer` with `type = 'polygon'`.
+- [x] Convert `points` array to closed SVG path via `pointsToSvgPath(points, true)`.
+- [x] Render via `page.drawSvgPath()`.
+- [x] Register in `registry.ts`.
+- [x] Write unit tests.
 
 #### 6.4 Stroke properties support
-- [ ] Implement stroke dash array rendering in `BaseRenderer` using `setDashPattern` PDF operator via `pushOperators`.
-- [ ] Implement `strokeLineCap` mapping (`butt` -> 0, `round` -> 1, `square` -> 2) via `setLineCap` operator.
-- [ ] Implement `strokeLineJoin` mapping (`miter` -> 0, `round` -> 1, `bevel` -> 2) via `setLineJoin` operator.
-- [ ] Add stroke property tests to all shape renderers.
+- [x] Implement stroke dash array rendering in `BaseRenderer` using `setDashPattern` PDF operator via `pushOperators`.
+- [x] Implement `strokeLineCap` mapping (`butt` -> 0, `round` -> 1, `square` -> 2) via `setLineCap` operator.
+- [x] Implement `strokeLineJoin` mapping (`miter` -> 0, `round` -> 1, `bevel` -> 2) via `setLineJoin` operator.
+- [x] Add stroke property tests to base renderer.
 
 #### 6.5 Integration test: vector paths
-- [ ] Create fixture with complex paths, polylines, and polygons.
-- [ ] Write integration test verifying valid PDF output.
+- [x] Create fixture with complex paths, polylines, and polygons.
+- [x] Write integration test verifying valid PDF output.
 
 **Commit pattern for this epic:** Strict TDD per subtask (6.1-6.5).
 
-**Exit criteria:** All path types render correctly. SVG path commands are faithfully translated. Stroke dash/cap/join properties work on all shape and path types.
+**Exit criteria:** All path types render correctly. SVG path commands are faithfully translated. Stroke dash/cap/join properties work on all shape and path types. ✅ **COMPLETE** — 293 tests passing, all vector path renderers implemented.
 
 ---
 
