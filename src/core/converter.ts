@@ -1,4 +1,4 @@
-import { PDFDocument, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, concatTransformationMatrix } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 import type {
   FabricCanvasJSON,
@@ -210,9 +210,12 @@ export async function convertCanvasToPdf(
     currentDepth: 0,
   };
 
-  // Apply background color if specified
-  if (options.backgroundColor) {
-    const bgColor = parseColor(options.backgroundColor);
+  // Apply background color if specified (options override canvasJSON)
+  const backgroundColor = options.backgroundColor ?? 
+    (typeof canvasJSON.background === 'string' ? canvasJSON.background : undefined);
+  
+  if (backgroundColor) {
+    const bgColor = parseColor(backgroundColor);
     if (bgColor) {
       page.drawRectangle({
         x: 0,
@@ -224,10 +227,27 @@ export async function convertCanvasToPdf(
     }
   }
 
-  // Render all objects in order
-  // Note: Margins are handled by the transformation system
-  for (const obj of canvasJSON.objects) {
-    await renderObject(obj as FabricObject, page, context);
+  // Apply margins by translating the coordinate system
+  const hasMargins = options.margin.left > 0 || options.margin.top > 0 || 
+                     options.margin.right > 0 || options.margin.bottom > 0;
+  
+  if (hasMargins) {
+    page.pushOperators(
+      concatTransformationMatrix(1, 0, 0, 1, options.margin.left, options.margin.top)
+    );
+  }
+
+  try {
+    // Render all objects in order
+    for (const obj of canvasJSON.objects) {
+      await renderObject(obj as FabricObject, page, context);
+    }
+  } finally {
+    // Restore coordinate system if margins were applied
+    if (hasMargins) {
+      // We can't truly "pop" operators, but in PDF the page ends here
+      // so the transformation doesn't affect subsequent pages
+    }
   }
 
   // Serialize the PDF to bytes
