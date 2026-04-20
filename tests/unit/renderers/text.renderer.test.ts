@@ -280,7 +280,10 @@ describe('TextRenderer', () => {
 
       context.fontManager.resolve = vi.fn().mockRejectedValue(new Error('Font not found'));
 
-      await expect(renderer.render(text, context.page, context)).resolves.not.toThrow();
+      // Should not throw
+      await renderer.render(text, context.page, context);
+      // Should add warning
+      expect(context.warnings.add).toHaveBeenCalled();
     });
   });
 });
