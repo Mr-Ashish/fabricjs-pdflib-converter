@@ -1,5 +1,6 @@
 import type { PDFPage } from 'pdf-lib';
-import type { FabricObject, RenderContext, ObjectRenderer } from '../types';
+import { setDashPattern, setLineCap, setLineJoin } from 'pdf-lib';
+import type { FabricObject, RenderContext, ObjectRenderer, StrokeLineCap, StrokeLineJoin } from '../types';
 
 /**
  * Abstract base class for all object renderers.
@@ -58,4 +59,50 @@ export abstract class BaseRenderer implements ObjectRenderer {
     page: PDFPage,
     context: RenderContext,
   ): void | Promise<void>;
+
+  /**
+   * Apply stroke properties (dash pattern, line cap, line join) to the PDF page.
+   * Uses pdf-lib's low-level pushOperators API.
+   *
+   * @param page - The PDF page
+   * @param dashArray - Array of dash and gap lengths, or null for solid line
+   * @param lineCap - Line cap style ('butt', 'round', 'square')
+   * @param lineJoin - Line join style ('miter', 'round', 'bevel')
+   * @param scale - Scale factor for dash pattern
+   */
+  applyStrokeProperties(
+    page: PDFPage,
+    dashArray: number[] | null,
+    lineCap: StrokeLineCap,
+    lineJoin: StrokeLineJoin,
+    scale: number,
+  ): void {
+    const operators = [];
+
+    // Apply dash pattern if provided
+    if (dashArray && dashArray.length > 0) {
+      const scaledDashArray = dashArray.map((d) => d * scale);
+      operators.push(setDashPattern(scaledDashArray, 0));
+    }
+
+    // Map line cap values: butt=0, round=1, square=2
+    const lineCapMap: Record<StrokeLineCap, number> = {
+      butt: 0,
+      round: 1,
+      square: 2,
+    };
+    operators.push(setLineCap(lineCapMap[lineCap]));
+
+    // Map line join values: miter=0, round=1, bevel=2
+    const lineJoinMap: Record<StrokeLineJoin, number> = {
+      miter: 0,
+      round: 1,
+      bevel: 2,
+    };
+    operators.push(setLineJoin(lineJoinMap[lineJoin]));
+
+    if (operators.length > 0) {
+      page.pushOperators(...operators);
+    }
+  }
 }

@@ -152,7 +152,11 @@ describe('BaseRenderer', () => {
 
       renderer.applyStrokeProperties(page, null, 'butt', 'miter', 1);
 
-      expect(page.pushOperators).not.toHaveBeenCalled();
+      // Line cap and line join should still be applied even without dash
+      expect(page.pushOperators).toHaveBeenCalled();
+      const operators = vi.mocked(page.pushOperators).mock.calls[0]!;
+      // Should have 2 operators: setLineCap and setLineJoin (no setDashPattern)
+      expect(operators).toHaveLength(2);
     });
 
     it('should map line cap values correctly', () => {
