@@ -1,6 +1,5 @@
 import type { PDFPage } from 'pdf-lib';
 import type { FabricObject, RenderContext, ObjectRenderer } from '../types';
-import { fabricToMatrix, fabricToPdfMatrix } from '../transform/coordinate';
 
 /**
  * Abstract base class for all object renderers.
@@ -28,7 +27,10 @@ export abstract class BaseRenderer implements ObjectRenderer {
 
   /**
    * Template method that orchestrates the rendering process.
-   * Handles visibility, graphics state, transforms, and delegates to renderObject.
+   * Handles visibility and delegates to renderObject.
+   *
+   * Note: pdf-lib handles graphics state internally through drawing methods.
+   * Transformations are applied by individual renderers via drawing method options.
    *
    * @param obj - The Fabric object to render
    * @param page - The PDF page to render to
@@ -40,60 +42,12 @@ export abstract class BaseRenderer implements ObjectRenderer {
       return;
     }
 
-    // Save graphics state
-    page.pushGraphicsState();
-
-    try {
-      // Apply object transformation matrix
-      this.applyTransform(obj, page, context);
-
-      // Apply opacity if needed
-      if (obj.opacity < 1) {
-        // Note: pdf-lib doesn't have direct setGraphicsState for opacity
-        // This would require creating an extended graphics state
-        // For now, we track it but don't apply it via operators
-      }
-
-      // Delegate to subclass for actual drawing
-      this.renderObject(obj, page, context);
-    } finally {
-      // Always restore graphics state
-      page.popGraphicsState();
-    }
-  }
-
-  /**
-   * Apply the object's transformation matrix to the PDF page.
-   *
-   * @param obj - The Fabric object
-   * @param page - The PDF page
-   * @param context - Rendering context with scale
-   */
-  protected applyTransform(
-    obj: FabricObject,
-    page: PDFPage,
-    context: RenderContext,
-  ): void {
-    const fabricMatrix = fabricToMatrix(obj);
-    const pdfMatrix = fabricToPdfMatrix(
-      fabricMatrix,
-      context.options.pageHeight,
-      context.options.scale,
-    );
-
-    page.concatTransformationMatrix(
-      pdfMatrix[0],
-      pdfMatrix[1],
-      pdfMatrix[2],
-      pdfMatrix[3],
-      pdfMatrix[4],
-      pdfMatrix[5],
-    );
+    // Delegate to subclass for actual drawing
+    this.renderObject(obj, page, context);
   }
 
   /**
    * Abstract method that subclasses implement for type-specific rendering.
-   * Called within the graphics state save/restore and transform context.
    *
    * @param obj - The Fabric object to render
    * @param page - The PDF page to render to

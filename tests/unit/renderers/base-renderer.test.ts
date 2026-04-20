@@ -43,11 +43,7 @@ function createMockObject(overrides: Partial<FabricObject> = {}): FabricObject {
 function createMockContext(overrides: Partial<RenderContext> = {}): RenderContext {
   return {
     pdfDoc: {} as RenderContext['pdfDoc'],
-    page: {
-      pushGraphicsState: vi.fn(),
-      popGraphicsState: vi.fn(),
-      concatTransformationMatrix: vi.fn(),
-    } as unknown as PDFPage,
+    page: {} as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],
     options: {
@@ -98,32 +94,6 @@ describe('BaseRenderer', () => {
       expect(renderer.renderObjectCalls).toHaveLength(0);
     });
 
-    it('should call pushGraphicsState and popGraphicsState for visible objects', () => {
-      const renderer = new MockRenderer();
-      const obj = createMockObject({ visible: true });
-      const context = createMockContext();
-
-      renderer.render(obj, context.page, context);
-
-      expect(context.page.pushGraphicsState).toHaveBeenCalledTimes(1);
-      expect(context.page.popGraphicsState).toHaveBeenCalledTimes(1);
-    });
-
-    it('should apply transform matrix via concatTransformationMatrix', () => {
-      const renderer = new MockRenderer();
-      const obj = createMockObject({
-        left: 10,
-        top: 20,
-        scaleX: 2,
-        scaleY: 3,
-      });
-      const context = createMockContext();
-
-      renderer.render(obj, context.page, context);
-
-      expect(context.page.concatTransformationMatrix).toHaveBeenCalled();
-    });
-
     it('should call renderObject for visible objects', () => {
       const renderer = new MockRenderer();
       const obj = createMockObject({ visible: true });
@@ -147,7 +117,7 @@ describe('BaseRenderer', () => {
       expect(renderer.renderObjectCalls[0]!.obj).toEqual(obj);
     });
 
-    it('should call popGraphicsState even if renderObject throws', () => {
+    it('should propagate errors from renderObject', () => {
       const renderer = new MockRenderer();
       renderer.renderObject = () => {
         throw new Error('Render error');
@@ -156,7 +126,6 @@ describe('BaseRenderer', () => {
       const context = createMockContext();
 
       expect(() => renderer.render(obj, context.page, context)).toThrow('Render error');
-      expect(context.page.popGraphicsState).toHaveBeenCalledTimes(1);
     });
   });
 });
