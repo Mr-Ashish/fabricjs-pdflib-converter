@@ -1,5 +1,6 @@
 // Transform utilities: matrix math, coordinate conversion, origin resolution
 
+import { concatTransformationMatrix } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 import type { FabricObject, RenderContext } from '../types';
 import { composeMatrix } from './matrix';
@@ -30,10 +31,10 @@ export function applyTransformations(
     flipY: obj.flipY,
   });
 
-  // Apply the transformation matrix to the page
+  // Apply the transformation matrix to the page using pushOperators
   // pdf-lib's concatTransformationMatrix: [a, b, c, d, e, f]
   const [a, b, c, d, e, f] = matrix;
-  page.concatTransformationMatrix(a, b, c, d, e, f);
+  page.pushOperators(concatTransformationMatrix(a, b, c, d, e, f));
 }
 
 // Re-export all transform utilities
