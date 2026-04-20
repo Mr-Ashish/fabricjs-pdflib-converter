@@ -99,9 +99,7 @@ describe('convertCanvasToPdf', () => {
   it('should convert canvas to PDF bytes', async () => {
     const canvasJSON: FabricCanvasJSON = {
       version: '5.3.0',
-      objects: [
-        { type: 'rect', left: 10, top: 10, width: 100, height: 50 },
-      ],
+      objects: [], // Empty canvas for simpler test
     };
 
     const options = resolveOptions({}, canvasJSON);

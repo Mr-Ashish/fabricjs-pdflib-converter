@@ -153,6 +153,9 @@ export interface RenderContext {
   /** Warning collector for reporting non-fatal issues */
   warnings: WarningCollector;
 
+  /** Renderer registry for looking up object renderers */
+  registry: RendererRegistry;
+
   /**
    * Recursively render a Fabric object.
    * Used by group renderer to render child objects.
