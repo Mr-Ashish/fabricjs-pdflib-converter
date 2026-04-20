@@ -56,13 +56,14 @@ describe('multiplyMatrices', () => {
     const m1: TransformMatrix = [2, 1, 0, 2, 5, 3];
     const m2: TransformMatrix = [1, 0, 1, 1, 2, 4];
     const result = multiplyMatrices(m1, m2);
-    // m1 * m2 = [2*1+1*1, 2*0+1*1, 0*1+2*1, 0*0+2*1, 2*2+1*4+5, 2*0+1*4+3]
-    //          = [3, 1, 2, 2, 13, 7]
+    // multiplyMatrices(m1, m2) = m2 × m1 (m1 applied first, then m2)
+    // m2 × m1 = [1*2+1*1, 0*2+1*1, 1*0+1*2, 0*0+1*2, 1*5+1*3+2, 0*5+1*3+4]
+    //          = [3, 1, 2, 2, 10, 7]
     expect(result[0]).toBeCloseTo(3, 10);
     expect(result[1]).toBeCloseTo(1, 10);
     expect(result[2]).toBeCloseTo(2, 10);
     expect(result[3]).toBeCloseTo(2, 10);
-    expect(result[4]).toBeCloseTo(13, 10);
+    expect(result[4]).toBeCloseTo(10, 10);
     expect(result[5]).toBeCloseTo(7, 10);
   });
 });
