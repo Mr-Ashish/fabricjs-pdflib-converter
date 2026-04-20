@@ -166,8 +166,8 @@ describe('ImageRenderer', () => {
 
       await renderer.render(image, context.page, context);
 
-      const call = vi.mocked(context.page.drawImage).mock.calls[0]![0];
-      expect(call.opacity).toBe(0.5);
+      const options = vi.mocked(context.page.drawImage).mock.calls[0]![1];
+      expect(options?.opacity).toBe(0.5);
     });
 
     it('should not apply opacity when equal to 1', async () => {
@@ -177,8 +177,8 @@ describe('ImageRenderer', () => {
 
       await renderer.render(image, context.page, context);
 
-      const call = vi.mocked(context.page.drawImage).mock.calls[0]![0];
-      expect(call.opacity).toBeUndefined();
+      const options = vi.mocked(context.page.drawImage).mock.calls[0]![1];
+      expect(options?.opacity).toBeUndefined();
     });
   });
 
@@ -231,7 +231,9 @@ describe('ImageRenderer', () => {
       const image = createMockImage({ width: 0 });
       const context = createMockContext();
 
-      await expect(renderer.render(image, context.page, context)).resolves.not.toThrow();
+      // Should not throw and should not call drawImage
+      await renderer.render(image, context.page, context);
+      expect(context.page.drawImage).not.toHaveBeenCalled();
     });
 
     it('should handle zero height gracefully', async () => {
@@ -239,7 +241,9 @@ describe('ImageRenderer', () => {
       const image = createMockImage({ height: 0 });
       const context = createMockContext();
 
-      await expect(renderer.render(image, context.page, context)).resolves.not.toThrow();
+      // Should not throw and should not call drawImage
+      await renderer.render(image, context.page, context);
+      expect(context.page.drawImage).not.toHaveBeenCalled();
     });
   });
 });
