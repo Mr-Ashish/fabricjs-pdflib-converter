@@ -41,7 +41,10 @@ export class EllipseRenderer extends BaseRenderer {
       return;
     }
 
+    // Draw at (0, 0) - the transformation matrix handles positioning
     page.drawEllipse({
+      x: 0,
+      y: 0,
       xScale,
       yScale,
       color: pdfFillColor,

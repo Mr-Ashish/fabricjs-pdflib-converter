@@ -52,11 +52,12 @@ export class CircleRenderer extends BaseRenderer {
     strokeColor: ReturnType<typeof rgb> | undefined,
   ): void {
     const radius = obj.radius;
-    const diameter = radius * 2;
 
+    // Draw at (0, 0) - the transformation matrix handles positioning
+    // pdf-lib's drawCircle draws the circle centered at (x, y)
     page.drawCircle({
-      x: radius,
-      y: radius,
+      x: 0,
+      y: 0,
       size: radius,
       color: fillColor,
       borderColor: strokeColor,

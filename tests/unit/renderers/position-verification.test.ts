@@ -169,9 +169,10 @@ describe('Position Verification Tests', () => {
 
       const call = vi.mocked(context.page.drawCircle).mock.calls[0]![0];
       
-      // Circle should be drawn at (radius, radius) in local coordinates
-      expect(call.x).toBe(50);
-      expect(call.y).toBe(50);
+      // Circle should be drawn at (0, 0) in local coordinates
+      // The transformation matrix handles positioning to the correct location
+      expect(call.x).toBe(0);
+      expect(call.y).toBe(0);
       expect(call.size).toBe(50);
     });
   });

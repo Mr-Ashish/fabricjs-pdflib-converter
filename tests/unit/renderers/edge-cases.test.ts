@@ -196,9 +196,9 @@ describe('Renderer Edge Cases', () => {
 
       // Should draw with original radius (scaling is in transform matrix)
       const call = vi.mocked(context.page.drawCircle).mock.calls[0]![0];
-      // Circle is drawn at (radius, radius) with size = radius
-      expect(call.x).toBe(50);
-      expect(call.y).toBe(50);
+      // Circle is drawn at (0, 0) with size = radius (transformation matrix handles positioning)
+      expect(call.x).toBe(0);
+      expect(call.y).toBe(0);
       expect(call.size).toBe(50);
     });
   });

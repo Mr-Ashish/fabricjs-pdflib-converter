@@ -52,7 +52,10 @@ export class RectRenderer extends BaseRenderer {
     fillColor: ReturnType<typeof rgb> | undefined,
     strokeColor: ReturnType<typeof rgb> | undefined,
   ): void {
+    // Draw at (0, 0) - the transformation matrix handles positioning
     page.drawRectangle({
+      x: 0,
+      y: 0,
       width: obj.width,
       height: obj.height,
       color: fillColor,
