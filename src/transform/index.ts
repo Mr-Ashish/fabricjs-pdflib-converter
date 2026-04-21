@@ -8,20 +8,38 @@ import { composeMatrix } from './matrix';
 /**
  * Applies Fabric.js object transformations to the PDF page.
  * This sets up the transformation matrix for rendering the object.
- *
- * @param obj - The Fabric object with transform properties
- * @param page - The PDF page to apply transformations to
- * @param context - The render context
+ * 
+ * PDF Coordinate System:
+ * - Origin (0, 0) is at the bottom-left of the page
+ * - Y increases upward
+ * 
+ * Fabric.js Coordinate System:
+ * - Origin (0, 0) is at the top-left of the canvas
+ * - Y increases downward
+ * 
+ * This function converts Fabric coordinates to PDF coordinates.
  */
 export function applyTransformations(
   obj: FabricObject,
   page: PDFPage,
   context: RenderContext,
 ): void {
+  // Get object dimensions (handle missing height for text, etc.)
+  const objWidth = obj.width || 0;
+  const objHeight = obj.height || 0;
+
+  // Convert Fabric Y (top-down) to PDF Y (bottom-up)
+  // In Fabric: obj.top is distance from top of canvas
+  // In PDF: we need distance from bottom of page
+  // We also need to account for the object's height because Fabric positions
+  // from the top-left corner, but after our transformation we want to draw
+  // from the bottom-left
+  const pdfY = context.options.pageHeight - obj.top - objHeight;
+
   // Build transformation matrix from object properties
   const matrix = composeMatrix({
     translateX: obj.left,
-    translateY: context.options.pageHeight - obj.top - (obj.height * obj.scaleY),
+    translateY: pdfY,
     scaleX: obj.scaleX,
     scaleY: obj.scaleY,
     angle: obj.angle,

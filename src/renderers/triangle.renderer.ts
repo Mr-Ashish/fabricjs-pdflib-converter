@@ -6,7 +6,9 @@ import { parseColor } from '../color';
 
 /**
  * Renderer for Fabric.js triangle objects.
- * Generates an isosceles triangle using SVG path.
+ * 
+ * Note: Scaling is applied via the transformation matrix in applyTransformations,
+ * so we use the original width/height without multiplying by scaleX/scaleY.
  */
 export class TriangleRenderer extends BaseRenderer {
   readonly type = 'triangle';
@@ -29,36 +31,21 @@ export class TriangleRenderer extends BaseRenderer {
     const pdfFillColor = fillColor ? rgb(fillColor.r, fillColor.g, fillColor.b) : undefined;
     const pdfStrokeColor = strokeColor ? rgb(strokeColor.r, strokeColor.g, strokeColor.b) : undefined;
 
-    // Calculate scaled dimensions
-    const width = obj.width * obj.scaleX;
-    const height = obj.height * obj.scaleY;
+    // Generate triangle path
+    // Fabric.js triangle: pointing up, centered, with given width/height
+    const width = obj.width;
+    const height = obj.height;
 
-    // Skip if either dimension is zero
-    if (width === 0 || height === 0) {
-      return;
-    }
-
-    // Generate SVG path for isosceles triangle
-    const path = this.generateTrianglePath(width, height);
+    // Triangle points (pointing up)
+    // Top point at (width/2, 0)
+    // Bottom left at (0, height)
+    // Bottom right at (width, height)
+    const path = `M ${width / 2} 0 L 0 ${height} L ${width} ${height} Z`;
 
     page.drawSvgPath(path, {
       color: pdfFillColor,
       borderColor: pdfStrokeColor,
-      borderWidth: strokeColor ? obj.strokeWidth : 0,
+      borderWidth: pdfStrokeColor ? obj.strokeWidth : 0,
     });
-  }
-
-  /**
-   * Generate SVG path for an isosceles triangle.
-   * Points: bottom-left, top-center, bottom-right
-   */
-  private generateTrianglePath(width: number, height: number): string {
-    // Triangle vertices (isosceles pointing up)
-    // Bottom-left: (0, height)
-    // Top-center: (width/2, 0)
-    // Bottom-right: (width, height)
-    const halfWidth = width / 2;
-
-    return `M 0 ${height} L ${halfWidth} 0 L ${width} ${height} Z`;
   }
 }

@@ -7,6 +7,9 @@ import { parseColor } from '../color';
 /**
  * Renderer for Fabric.js ellipse objects.
  * Uses pdf-lib's drawEllipse with xScale/yScale.
+ * 
+ * Note: Scaling is applied via the transformation matrix in applyTransformations,
+ * so we use the original rx/ry without multiplying by scaleX/scaleY.
  */
 export class EllipseRenderer extends BaseRenderer {
   readonly type = 'ellipse';
@@ -29,9 +32,9 @@ export class EllipseRenderer extends BaseRenderer {
     const pdfFillColor = fillColor ? rgb(fillColor.r, fillColor.g, fillColor.b) : undefined;
     const pdfStrokeColor = strokeColor ? rgb(strokeColor.r, strokeColor.g, strokeColor.b) : undefined;
 
-    // Calculate scaled radii
-    const xScale = (obj.rx ?? 0) * Math.abs(obj.scaleX);
-    const yScale = (obj.ry ?? 0) * Math.abs(obj.scaleY);
+    // Use original radii - scaling is handled by transformation matrix
+    const xScale = obj.rx ?? 0;
+    const yScale = obj.ry ?? 0;
 
     // Skip if either radius is zero
     if (xScale === 0 || yScale === 0) {

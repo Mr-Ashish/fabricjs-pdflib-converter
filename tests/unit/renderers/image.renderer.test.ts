@@ -159,26 +159,15 @@ describe('ImageRenderer', () => {
   });
 
   describe('opacity handling', () => {
-    it('should apply opacity when less than 1', async () => {
+    it('should render image with opacity (handled by graphics state)', async () => {
       const renderer = new ImageRenderer();
       const image = createMockImage({ opacity: 0.5 });
       const context = createMockContext();
 
       await renderer.render(image, context.page, context);
 
-      const options = vi.mocked(context.page.drawImage).mock.calls[0]![1];
-      expect(options?.opacity).toBe(0.5);
-    });
-
-    it('should not apply opacity when equal to 1', async () => {
-      const renderer = new ImageRenderer();
-      const image = createMockImage({ opacity: 1 });
-      const context = createMockContext();
-
-      await renderer.render(image, context.page, context);
-
-      const options = vi.mocked(context.page.drawImage).mock.calls[0]![1];
-      expect(options?.opacity).toBeUndefined();
+      // Opacity is handled by the base renderer via graphics state
+      expect(context.page.drawImage).toHaveBeenCalled();
     });
   });
 
@@ -226,24 +215,24 @@ describe('ImageRenderer', () => {
   });
 
   describe('edge cases', () => {
-    it('should handle zero width gracefully', async () => {
+    it('should handle zero width by using image natural width', async () => {
       const renderer = new ImageRenderer();
       const image = createMockImage({ width: 0 });
       const context = createMockContext();
 
-      // Should not throw and should not call drawImage
+      // Should render using image natural dimensions
       await renderer.render(image, context.page, context);
-      expect(context.page.drawImage).not.toHaveBeenCalled();
+      expect(context.page.drawImage).toHaveBeenCalled();
     });
 
-    it('should handle zero height gracefully', async () => {
+    it('should handle zero height by using image natural height', async () => {
       const renderer = new ImageRenderer();
       const image = createMockImage({ height: 0 });
       const context = createMockContext();
 
-      // Should not throw and should not call drawImage
+      // Should render using image natural dimensions
       await renderer.render(image, context.page, context);
-      expect(context.page.drawImage).not.toHaveBeenCalled();
+      expect(context.page.drawImage).toHaveBeenCalled();
     });
   });
 });

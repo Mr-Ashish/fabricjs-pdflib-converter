@@ -111,7 +111,7 @@ describe('EllipseRenderer', () => {
       expect(call.yScale).toBe(30);
     });
 
-    it('should apply scale factors to rx and ry', () => {
+    it('should not apply scale factors to rx and ry (scaling handled by matrix)', () => {
       const renderer = new EllipseRenderer();
       const ellipse = createMockEllipse({
         rx: 50,
@@ -124,8 +124,9 @@ describe('EllipseRenderer', () => {
       renderer.render(ellipse, context.page, context);
 
       const call = vi.mocked(context.page.drawEllipse).mock.calls[0]![0];
-      expect(call.xScale).toBe(100); // rx * scaleX
-      expect(call.yScale).toBe(45); // ry * scaleY
+      // Scaling is handled by transformation matrix, not by the renderer
+      expect(call.xScale).toBe(50); // original rx
+      expect(call.yScale).toBe(30); // original ry
     });
 
     it('should apply fill color', () => {

@@ -8,6 +8,11 @@ import { getTextWidth, getBaselineOffset } from '../fonts/font-metrics';
 /**
  * Renderer for Fabric.js text objects (text, i-text, textbox).
  * Handles single/multi-line text with alignment and styling.
+ * 
+ * Coordinate System:
+ * - The transformation matrix positions us at the bottom-left of the text box
+ * - We need to draw text upward from there
+ * - PDF Y increases upward, so positive Y moves up
  */
 export class TextRenderer extends BaseRenderer {
   readonly type = 'text';
@@ -43,9 +48,14 @@ export class TextRenderer extends BaseRenderer {
       const baselineOffset = getBaselineOffset(font, obj.fontSize);
 
       // Render each line
+      // Lines stack upward from the bottom of the text box
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
-        const lineY = i * lineHeight;
+        
+        // Calculate line Y position
+        // First line is at the bottom (highest Y in PDF coordinates)
+        // Each subsequent line moves down (lower Y in PDF)
+        const lineY = (lines.length - 1 - i) * lineHeight + baselineOffset;
 
         // Calculate horizontal position based on alignment
         let xOffset = 0;
@@ -61,7 +71,7 @@ export class TextRenderer extends BaseRenderer {
         // Draw the line
         page.drawText(line, {
           x: xOffset,
-          y: -lineY - baselineOffset, // Negative Y for PDF coordinate system
+          y: lineY,
           size: obj.fontSize,
           font,
           color: pdfColor,

@@ -109,8 +109,8 @@ describe('CircleRenderer', () => {
       renderer.render(circle, context.page, context);
 
       const call = vi.mocked(context.page.drawCircle).mock.calls[0]![0];
-      // pdf-lib drawCircle uses size (diameter), not radius
-      expect(call.size).toBe(100); // radius * 2
+      // Radius is passed directly - scaling is handled by transformation matrix
+      expect(call.size).toBe(50);
     });
 
     it('should apply fill color', () => {

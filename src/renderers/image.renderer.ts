@@ -4,7 +4,10 @@ import type { FabricImageObject, RenderContext } from '../types';
 
 /**
  * Renderer for Fabric.js image objects.
- * Loads images via the imageLoader and renders them to the PDF page.
+ * Embeds and draws images onto the PDF.
+ * 
+ * Note: Scaling is applied via the transformation matrix in applyTransformations,
+ * so we use the original width/height without multiplying by scaleX/scaleY.
  */
 export class ImageRenderer extends BaseRenderer {
   readonly type = 'image';
@@ -14,47 +17,31 @@ export class ImageRenderer extends BaseRenderer {
     page: PDFPage,
     context: RenderContext,
   ): Promise<void> {
-    // Skip if dimensions are zero
-    if (obj.width === 0 || obj.height === 0) {
-      return;
-    }
-
     try {
       // Load the image via the image loader
-      const pdfImage = await context.imageLoader.load(obj.src);
+      const image = await context.imageLoader.load(obj.src);
 
-      // Calculate dimensions with scale
-      const width = obj.width * obj.scaleX;
-      const height = obj.height * obj.scaleY;
+      // Calculate dimensions
+      // Use specified width/height or fall back to image natural size
+      const width = obj.width || image.width;
+      const height = obj.height || image.height;
 
-      // Build draw options
-      const drawOptions: Parameters<typeof page.drawImage>[1] = {
-        width,
-        height,
-      };
-
-      // Apply opacity if less than 1
-      if (obj.opacity < 1) {
-        drawOptions.opacity = obj.opacity;
-      }
-
-      // Handle cropping if cropX or cropY are set
-      if (obj.cropX !== 0 || obj.cropY !== 0) {
-        // For now, we draw the full image
-        // TODO: Implement clipping via pushOperators when needed
-        drawOptions.xScale = width / pdfImage.width;
-        drawOptions.yScale = height / pdfImage.height;
-      }
-
-      page.drawImage(pdfImage, drawOptions);
+      // Draw the image
+      // Position is handled by the transformation matrix
+      page.drawImage(image, {
+        x: 0,
+        y: 0,
+        width: width,
+        height: height,
+      });
     } catch (error) {
       // Add warning and skip this image
       context.warnings.add({
         type: 'image_failed',
-        objectType: 'image',
-        objectIndex: -1, // Will be set by the caller
-        feature: 'image_load',
-        message: `Failed to load image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        objectType: obj.type,
+        objectIndex: -1,
+        feature: 'image_rendering',
+        message: `Failed to render image: ${error instanceof Error ? error.message : 'Unknown error'}`,
       });
     }
   }

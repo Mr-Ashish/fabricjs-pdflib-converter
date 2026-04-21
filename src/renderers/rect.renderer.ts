@@ -7,6 +7,9 @@ import { parseColor } from '../color';
 /**
  * Renderer for Fabric.js rectangle objects.
  * Handles both basic rectangles and rounded corner rectangles.
+ * 
+ * Note: Scaling is applied via the transformation matrix in applyTransformations,
+ * so we use the original width/height without multiplying by scaleX/scaleY.
  */
 export class RectRenderer extends BaseRenderer {
   readonly type = 'rect';
@@ -41,6 +44,7 @@ export class RectRenderer extends BaseRenderer {
 
   /**
    * Render a basic rectangle using pdf-lib's drawRectangle.
+   * Dimensions are NOT multiplied by scale - scaling is handled by the transformation matrix.
    */
   private renderBasicRect(
     obj: FabricRectObject,
@@ -49,8 +53,8 @@ export class RectRenderer extends BaseRenderer {
     strokeColor: ReturnType<typeof rgb> | undefined,
   ): void {
     page.drawRectangle({
-      width: obj.width * obj.scaleX,
-      height: obj.height * obj.scaleY,
+      width: obj.width,
+      height: obj.height,
       color: fillColor,
       borderColor: strokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,
@@ -59,6 +63,7 @@ export class RectRenderer extends BaseRenderer {
 
   /**
    * Render a rounded rectangle using SVG path.
+   * Dimensions are NOT multiplied by scale - scaling is handled by the transformation matrix.
    */
   private renderRoundedRect(
     obj: FabricRectObject,
@@ -66,10 +71,10 @@ export class RectRenderer extends BaseRenderer {
     fillColor: ReturnType<typeof rgb> | undefined,
     strokeColor: ReturnType<typeof rgb> | undefined,
   ): void {
-    const width = obj.width * obj.scaleX;
-    const height = obj.height * obj.scaleY;
-    const rx = Math.min((obj.rx ?? 0) * obj.scaleX, width / 2);
-    const ry = Math.min((obj.ry ?? 0) * obj.scaleY, height / 2);
+    const width = obj.width;
+    const height = obj.height;
+    const rx = Math.min((obj.rx ?? 0), width / 2);
+    const ry = Math.min((obj.ry ?? 0), height / 2);
 
     // Generate SVG path for rounded rectangle
     const path = this.generateRoundedRectPath(width, height, rx, ry);
