@@ -854,6 +854,77 @@ feat(api): export public API surface from index.ts
 
 ---
 
+## Epic 14: PDF Verification & Debugging Framework
+
+**Goal:** Enable comprehensive verification of generated PDF output to catch positioning, scaling, and transformation bugs.
+
+**Depends on:** Epic 13 (production-ready library).
+
+**Motivation:** Current testing framework verifies that methods are called but doesn't verify actual PDF output. This epic adds tools to inspect and verify the generated PDF content.
+
+### Subtasks
+
+#### 14.1 Transformation Inspector (Unit Test Level)
+- [x] Create `TransformationInspector` class to capture transformation chain
+  - Records Fabric.js properties → Origin offset → PDF Matrix → Draw command
+  - Provides verification methods for position, scale, rotation
+  - Outputs detailed reports for debugging
+- [x] Add debug script to generate test PDFs with various transformations
+- [ ] Integrate inspector into all renderer tests
+- [ ] Document usage in testing guide
+
+#### 14.2 PDF.js Integration Tests (Integration Level)
+- [ ] Install `pdfjs-dist` as dev dependency
+- [ ] Create PDF operator parser to extract:
+  - Transformation matrices (cm operator)
+  - Rectangle positions (re operator)
+  - Path coordinates
+  - Text positions
+- [ ] Write integration tests that verify actual PDF content:
+  ```typescript
+  const elements = await extractPageElements(pdfBytes);
+  expect(elements[0].bounds.x).toBeCloseTo(75, 1);
+  expect(elements[0].transform).toEqual([...]);
+  ```
+
+#### 14.3 Visual Regression Tests (Visual Level)
+- [ ] Install `pdf2pic` and `pixelmatch` as dev dependencies
+- [ ] Create visual test harness:
+  - Convert PDF to PNG
+  - Compare against expected reference images
+  - Generate diff images for failures
+- [ ] Create reference images for common scenarios:
+  - Basic shapes (rect, circle, triangle)
+  - Scaled shapes
+  - Rotated shapes
+  - Multi-object layouts
+
+#### 14.4 Coordinate System Debugger
+- [ ] Create visualization tool that shows:
+  - Fabric.js canvas with object positions
+  - PDF output with object positions
+  - Side-by-side comparison
+  - Transformation matrix breakdown
+- [ ] Add to demo application for interactive debugging
+
+#### 14.5 Position/Scale Bug Fixes
+- [ ] Fix any identified positioning bugs using new verification tools
+- [ ] Fix any identified scaling bugs
+- [ ] Add regression tests for all fixed bugs
+
+**Commit pattern for this epic:** 
+- `test(<scope>):` for verification framework additions
+- `fix(<scope>):` for bug fixes discovered during verification
+- `docs(<scope>):` for debugging guide documentation
+
+**Exit criteria:** 
+- All three verification layers (unit, integration, visual) are operational
+- Current positioning/scaling bugs are identified and fixed
+- Regression tests prevent future positioning bugs
+- Debugging tools are documented and usable
+
+---
+
 ## Execution Order Summary
 
 ```
