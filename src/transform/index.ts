@@ -91,22 +91,7 @@ export function applyTransformations(
   // Convert Fabric Y (top-down) to PDF Y (bottom-up)
   // In Fabric: obj.top is distance from top of canvas to the object's origin point
   // In PDF: we need distance from bottom of page to the same origin point
-  // 
-  // pdf-lib draws shapes upward from the given (x,y) position.
-  // For center origin, the originOffset.y = -height/2 already accounts for this.
-  // For top origin, we need to adjust because the origin is at the top edge.
-  let pdfOriginY = context.options.pageHeight - obj.top;
-  
-  // Adjust for pdf-lib's drawing direction (upward from y)
-  // For top origin: the top edge is at pdfOriginY, but pdf-lib draws from bottom-up
-  // So we need to subtract the height to get the bottom edge position
-  if (originY === 'top') {
-    pdfOriginY -= objHeight;
-  } else if (originY === 'bottom') {
-    // For bottom origin: origin is at bottom edge, which is where pdf-lib starts drawing
-    // No adjustment needed
-  }
-  // For center origin: the originOffset.y = -height/2 handles the adjustment
+  const pdfOriginY = context.options.pageHeight - obj.top;
 
   // Build the transformation matrix manually with correct order
   // We want: point' = Translate × Rotate × Scale × Skew × (point + originOffset)
@@ -150,7 +135,13 @@ export function applyTransformations(
   }
   
   // Step 5: Translate to final position
-  matrix = multiplyMatrices(matrix, [1, 0, 0, 1, obj.left, pdfOriginY]);
+  // For top origin, we need to adjust because pdf-lib draws upward from the given Y
+  // The origin is at the top edge, so we need to subtract height to position correctly
+  let translateY = pdfOriginY;
+  if (originY === 'top') {
+    translateY -= objHeight;
+  }
+  matrix = multiplyMatrices(matrix, [1, 0, 0, 1, obj.left, translateY]);
 
   // Apply the transformation matrix to the page
   const [a, b, c, d, e, f] = matrix;

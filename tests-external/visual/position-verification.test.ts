@@ -143,10 +143,12 @@ describe('Visual Position Verification', () => {
       savePng(pngBuffer, 'position-two-rects.png');
 
       // Check that content exists in both expected regions
-      // First rect: centered at (100, 100), so from (75, 75) to (125, 125)
-      const hasFirstRect = hasContentInRegion(pngBuffer, 70, 270, 60, 60);
-      // Second rect: centered at (300, 100), so from (275, 275) to (325, 325)
-      const hasSecondRect = hasContentInRegion(pngBuffer, 270, 270, 60, 60);
+      // First rect: centered at (100, 100), so in PDF from (75, 275) to (125, 325)
+      // In PNG (flipped): y = 400 - 325 = 75 from top
+      const hasFirstRect = hasContentInRegion(pngBuffer, 70, 70, 60, 60);
+      // Second rect: centered at (300, 100), so in PDF from (275, 275) to (325, 325)
+      // In PNG (flipped): y = 400 - 325 = 75 from top
+      const hasSecondRect = hasContentInRegion(pngBuffer, 270, 70, 60, 60);
 
       expect(hasFirstRect).toBe(true);
       expect(hasSecondRect).toBe(true);
@@ -273,11 +275,12 @@ describe('Visual Position Verification', () => {
 
       // With left/top origin at (100, 100):
       // In canvas: rect starts at (100, 100), extends to (180, 180)
-      // In PDF: x same, y flipped: 400 - 180 = 220 to 400 - 100 = 300
+      // In PDF: object drawn at translateY=220, extends to 300
+      // In PNG (flipped): y = 400 - 300 = 100 from top
       expect(bounds!.x).toBeGreaterThan(95);
       expect(bounds!.x).toBeLessThan(105);
-      expect(bounds!.y).toBeGreaterThan(215);
-      expect(bounds!.y).toBeLessThan(230);
+      expect(bounds!.y).toBeGreaterThan(95);
+      expect(bounds!.y).toBeLessThan(115);
     });
 
     it('should position circle at correct center point', async () => {
@@ -371,9 +374,10 @@ describe('Visual Position Verification', () => {
       });
       savePng(pngBuffer, 'position-at-origin.png');
 
-      // With origin at (0,0) and left/top origin, rect should be at top-left of PDF
-      // In PDF Y: 400 - 0 - 50 = 350, so rect is at bottom-left
-      const hasContent = hasContentInRegion(pngBuffer, 0, 350, 60, 60);
+      // With origin at (0,0) and left/top origin:
+      // In PDF: translateY = 400 - 0 - 50 = 350, object at y=350 to y=400
+      // In PNG (flipped): y = 400 - 400 = 0 (top edge)
+      const hasContent = hasContentInRegion(pngBuffer, 0, 0, 60, 60);
       expect(hasContent).toBe(true);
     });
   });
