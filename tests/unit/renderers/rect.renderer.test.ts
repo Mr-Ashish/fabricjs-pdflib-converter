@@ -46,6 +46,7 @@ function createMockContext(): RenderContext {
       pushGraphicsState: vi.fn(),
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
+      pushOperators: vi.fn(),
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],

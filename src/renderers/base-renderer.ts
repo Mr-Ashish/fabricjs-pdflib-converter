@@ -1,5 +1,5 @@
 import type { PDFPage } from 'pdf-lib';
-import { setDashPattern, setLineCap, setLineJoin } from 'pdf-lib';
+import { setDashPattern, setLineCap, setLineJoin, pushGraphicsState, popGraphicsState } from 'pdf-lib';
 import type { FabricObject, RenderContext, ObjectRenderer, StrokeLineCap, StrokeLineJoin } from '../types';
 
 /**
@@ -30,8 +30,8 @@ export abstract class BaseRenderer implements ObjectRenderer {
    * Template method that orchestrates the rendering process.
    * Handles visibility and delegates to renderObject.
    *
-   * Note: pdf-lib handles graphics state internally through drawing methods.
-   * Transformations are applied by individual renderers via drawing method options.
+   * Uses PDF graphics state isolation (q/Q operators) to ensure transformations
+   * don't leak between objects. This prevents the "only one object visible" bug.
    *
    * @param obj - The Fabric object to render
    * @param page - The PDF page to render to
@@ -43,8 +43,17 @@ export abstract class BaseRenderer implements ObjectRenderer {
       return;
     }
 
-    // Delegate to subclass for actual drawing
-    this.renderObject(obj, page, context);
+    // Save graphics state before applying transformations
+    // This ensures each object is rendered in isolation
+    page.pushOperators(pushGraphicsState());
+
+    try {
+      // Delegate to subclass for actual drawing
+      this.renderObject(obj, page, context);
+    } finally {
+      // Always restore graphics state, even if rendering throws
+      page.pushOperators(popGraphicsState());
+    }
   }
 
   /**

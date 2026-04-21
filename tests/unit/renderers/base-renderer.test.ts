@@ -46,7 +46,9 @@ function createMockObject(overrides: Partial<FabricObject> = {}): FabricObject {
 function createMockContext(overrides: Partial<RenderContext> = {}): RenderContext {
   return {
     pdfDoc: {} as RenderContext['pdfDoc'],
-    page: {} as PDFPage,
+    page: {
+      pushOperators: vi.fn(),
+    } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],
     options: {
