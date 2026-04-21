@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, concatTransformationMatrix } from 'pdf-lib';
+import { PDFDocument, rgb, concatTransformationMatrix, pushGraphicsState, popGraphicsState } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 import type {
   FabricCanvasJSON,
@@ -158,12 +158,19 @@ async function renderObject(
     return;
   }
 
-  // Apply transformations (position, scale, rotation, skew)
-  // This modifies the page's transformation matrix
-  applyTransformations(obj, page, context);
+  // Save graphics state before applying object transformations
+  page.pushOperators(pushGraphicsState());
 
-  // Render the object
-  await renderer.render(obj, page, context);
+  try {
+    // Apply transformations (position, scale, rotation, skew)
+    applyTransformations(obj, page, context);
+
+    // Render the object
+    await renderer.render(obj, page, context);
+  } finally {
+    // Restore graphics state to isolate this object's transformations
+    page.pushOperators(popGraphicsState());
+  }
 }
 
 /**
@@ -227,27 +234,9 @@ export async function convertCanvasToPdf(
     }
   }
 
-  // Apply margins by translating the coordinate system
-  const hasMargins = options.margin.left > 0 || options.margin.top > 0 || 
-                     options.margin.right > 0 || options.margin.bottom > 0;
-  
-  if (hasMargins) {
-    page.pushOperators(
-      concatTransformationMatrix(1, 0, 0, 1, options.margin.left, options.margin.top)
-    );
-  }
-
-  try {
-    // Render all objects in order
-    for (const obj of canvasJSON.objects) {
-      await renderObject(obj as FabricObject, page, context);
-    }
-  } finally {
-    // Restore coordinate system if margins were applied
-    if (hasMargins) {
-      // We can't truly "pop" operators, but in PDF the page ends here
-      // so the transformation doesn't affect subsequent pages
-    }
+  // Render all objects in order
+  for (const obj of canvasJSON.objects) {
+    await renderObject(obj as FabricObject, page, context);
   }
 
   // Serialize the PDF to bytes
