@@ -1,4 +1,5 @@
 import type { PDFPage } from 'pdf-lib';
+import { pushGraphicsState, popGraphicsState } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
 import type { FabricGroupObject, RenderContext } from '../types';
 
@@ -27,7 +28,7 @@ export class GroupRenderer extends BaseRenderer {
     }
 
     // Push graphics state for the group's transform
-    page.pushGraphicsState();
+    page.pushOperators(pushGraphicsState());
 
     try {
       // Increment depth for children
@@ -42,7 +43,7 @@ export class GroupRenderer extends BaseRenderer {
       }
     } finally {
       // Always pop graphics state
-      page.popGraphicsState();
+      page.pushOperators(popGraphicsState());
     }
   }
 }

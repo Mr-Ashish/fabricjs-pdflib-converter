@@ -3,6 +3,7 @@ import type { PDFPage } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
 import type { FabricCircleObject, RenderContext } from '../types';
 import { parseColor } from '../color';
+import { drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Renderer for Fabric.js circle objects.
@@ -93,10 +94,14 @@ export class CircleRenderer extends BaseRenderer {
     // Determine large arc flag
     const largeArc = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0;
 
-    // Build SVG path for arc
+    // Build SVG path for arc.
+    // In canvas-Y-down: Fabric's angle=0 is +X, angle=90° is +Y (down).
+    // cos/sin of Fabric's angle therefore give the canvas-Y-down offset from
+    // the circle's centre. SVG sweep-flag = 1 (clockwise) matches Fabric's
+    // clockwise angle progression in canvas view.
     const path = `M ${radius} ${radius} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
-    page.drawSvgPath(path, {
+    drawSvgPathInCanvas(page, path, {
       color: fillColor,
       borderColor: strokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,

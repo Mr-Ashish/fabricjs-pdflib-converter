@@ -115,30 +115,10 @@ describe('TriangleRenderer', () => {
       expect(call).toContain('Z'); // Closed path
     });
 
-    it('should generate correct triangle path points for center origin', () => {
-      const renderer = new TriangleRenderer();
-      const triangle = createMockTriangle({
-        width: 60,
-        height: 80,
-        originX: 'center',
-        originY: 'center',
-      });
-      const context = createMockContext();
-
-      renderer.render(triangle, context.page, context);
-
-      const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0] as string;
-      // Triangle with center origin: point at higher Y in PDF coords
-      // For width=60, height=80:
-      // - Point at (30, 80) - higher Y in PDF (pointing up)
-      // - Base from (0, 0) to (60, 0)
-      // - After origin offset (-30, -40), bbox center is at origin
-      expect(path).toContain('M 30 80');
-      expect(path).toContain('L 0 0');
-      expect(path).toContain('L 60 0');
-    });
-
-    it('should generate correct triangle path points for top origin', () => {
+    it('renders a canonical canvas-Y-down path with tip at the TOP of the bbox', () => {
+      // Contract: the transform layer establishes a canvas-Y-down local frame.
+      // In that frame, Fabric's upward-pointing triangle has its tip at y=0
+      // (top edge of bbox) and its base at y=height (bottom edge of bbox).
       const renderer = new TriangleRenderer();
       const triangle = createMockTriangle({
         width: 60,
@@ -151,14 +131,27 @@ describe('TriangleRenderer', () => {
       renderer.render(triangle, context.page, context);
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0] as string;
-      // Triangle with top origin: point at origin (top of bbox)
-      // For width=60, height=80:
-      // - Point at (30, 0) - at origin in local coords
-      // - Base at (0, -80) to (60, -80) - below origin
-      // - After origin offset (0, 0), point is at origin
       expect(path).toContain('M 30 0');
-      expect(path).toContain('L 0 -80');
-      expect(path).toContain('L 60 -80');
+      expect(path).toContain('L 0 80');
+      expect(path).toContain('L 60 80');
+    });
+
+    it('uses the same local path regardless of origin (transform layer handles origin)', () => {
+      const renderer = new TriangleRenderer();
+      const triangle = createMockTriangle({
+        width: 60,
+        height: 80,
+        originX: 'center',
+        originY: 'center',
+      });
+      const context = createMockContext();
+
+      renderer.render(triangle, context.page, context);
+
+      const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0] as string;
+      expect(path).toContain('M 30 0');
+      expect(path).toContain('L 0 80');
+      expect(path).toContain('L 60 80');
     });
 
     it('should apply fill color', () => {

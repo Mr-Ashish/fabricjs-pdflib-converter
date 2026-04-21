@@ -41,11 +41,11 @@ export class EllipseRenderer extends BaseRenderer {
       return;
     }
 
-    // pdf-lib's drawEllipse centers at (x, y) with xScale/yScale as radii
-    // We draw at (0, 0) and let the transformation matrix handle positioning
+    // pdf-lib's drawEllipse centers at (x, y). Draw centered at (rx, ry)
+    // so the local bounding box starts at (0, 0), matching rect/circle behavior.
     page.drawEllipse({
-      x: 0,
-      y: 0,
+      x: xRadius,
+      y: yRadius,
       xScale: xRadius,
       yScale: yRadius,
       color: pdfFillColor,

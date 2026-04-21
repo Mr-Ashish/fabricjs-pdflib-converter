@@ -3,6 +3,7 @@ import type { PDFPage } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
 import type { FabricRectObject, RenderContext } from '../types';
 import { parseColor } from '../color';
+import { drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Renderer for Fabric.js rectangle objects.
@@ -79,10 +80,9 @@ export class RectRenderer extends BaseRenderer {
     const rx = Math.min((obj.rx ?? 0), width / 2);
     const ry = Math.min((obj.ry ?? 0), height / 2);
 
-    // Generate SVG path for rounded rectangle
     const path = this.generateRoundedRectPath(width, height, rx, ry);
 
-    page.drawSvgPath(path, {
+    drawSvgPathInCanvas(page, path, {
       color: fillColor,
       borderColor: strokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,
@@ -90,8 +90,11 @@ export class RectRenderer extends BaseRenderer {
   }
 
   /**
-   * Generate SVG path string for a rounded rectangle.
-   * Uses arc commands for the corners.
+   * Generate an SVG path for a rounded rectangle in canvas-Y-down local coords:
+   *   (0, 0) = top-left of bbox, (w, h) = bottom-right.
+   *
+   * Sweep-flag = 1 (clockwise) is the natural direction around each corner
+   * when Y points down, matching the canvas view.
    */
   private generateRoundedRectPath(
     width: number,
@@ -99,33 +102,19 @@ export class RectRenderer extends BaseRenderer {
     rx: number,
     ry: number,
   ): string {
-    // If no rounding, use simple rect path
     if (rx === 0 || ry === 0) {
       return `M 0 0 L ${width} 0 L ${width} ${height} L 0 ${height} Z`;
     }
 
-    // Build path with rounded corners
-    // Start at top-left, after the corner arc
-    let path = `M 0 ${ry}`;
-
-    // Top edge to top-right corner
-    path += ` L 0 ${height - ry}`;
-    // Bottom-left corner arc
-    path += ` A ${rx} ${ry} 0 0 0 ${rx} ${height}`;
-    // Bottom edge to bottom-right
-    path += ` L ${width - rx} ${height}`;
-    // Bottom-right corner arc
-    path += ` A ${rx} ${ry} 0 0 0 ${width} ${height - ry}`;
-    // Right edge to top-right
-    path += ` L ${width} ${ry}`;
-    // Top-right corner arc
-    path += ` A ${rx} ${ry} 0 0 0 ${width - rx} 0`;
-    // Top edge to top-left
-    path += ` L ${rx} 0`;
-    // Top-left corner arc
-    path += ` A ${rx} ${ry} 0 0 0 0 ${ry}`;
-
-    // Close path
+    let path = `M ${rx} 0`;
+    path += ` L ${width - rx} 0`;
+    path += ` A ${rx} ${ry} 0 0 1 ${width} ${ry}`;
+    path += ` L ${width} ${height - ry}`;
+    path += ` A ${rx} ${ry} 0 0 1 ${width - rx} ${height}`;
+    path += ` L ${rx} ${height}`;
+    path += ` A ${rx} ${ry} 0 0 1 0 ${height - ry}`;
+    path += ` L 0 ${ry}`;
+    path += ` A ${rx} ${ry} 0 0 1 ${rx} 0`;
     path += ' Z';
 
     return path;

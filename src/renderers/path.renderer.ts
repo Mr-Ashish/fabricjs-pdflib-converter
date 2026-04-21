@@ -4,6 +4,7 @@ import { BaseRenderer } from './base-renderer';
 import type { FabricPathObject, RenderContext } from '../types';
 import { parseColor } from '../color';
 import { pathCommandsToSvg } from '../core/path-utils';
+import { drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Renderer for Fabric.js path objects.
@@ -38,7 +39,7 @@ export class PathRenderer extends BaseRenderer {
       return;
     }
 
-    page.drawSvgPath(svgPath, {
+    drawSvgPathInCanvas(page, svgPath, {
       color: pdfFillColor,
       borderColor: pdfStrokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,

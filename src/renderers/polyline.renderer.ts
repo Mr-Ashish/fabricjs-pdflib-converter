@@ -4,6 +4,7 @@ import { BaseRenderer } from './base-renderer';
 import type { FabricPolylineObject, RenderContext } from '../types';
 import { parseColor } from '../color';
 import { pointsToSvgPath } from '../core/path-utils';
+import { drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Renderer for Fabric.js polyline objects.
@@ -43,7 +44,7 @@ export class PolylineRenderer extends BaseRenderer {
       return;
     }
 
-    page.drawSvgPath(svgPath, {
+    drawSvgPathInCanvas(page, svgPath, {
       color: pdfFillColor,
       borderColor: pdfStrokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,

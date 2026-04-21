@@ -102,13 +102,20 @@ describe('LineRenderer', () => {
       expect(context.page.drawLine).toHaveBeenCalled();
     });
 
-    it('should pass correct start and end points', () => {
+    it('converts Fabric center-normalized endpoints to bbox-top-left local coords', () => {
+      // Fabric stores line endpoints as offsets from the line's own CENTER.
+      // For a diagonal line from canvas (0,0) to (100,50), Fabric emits
+      //   x1=-50, y1=-25, x2=50, y2=25, width=100, height=50
+      // Our renderer draws in a canvas-local Y-down frame whose origin is at
+      // the bbox TOP-LEFT, so endpoints must be shifted by (W/2, H/2).
       const renderer = new LineRenderer();
       const line = createMockLine({
-        x1: 0,
-        y1: 0,
-        x2: 100,
-        y2: 50,
+        x1: -50,
+        y1: -25,
+        x2: 50,
+        y2: 25,
+        width: 100,
+        height: 50,
       });
       const context = createMockContext();
 
@@ -117,6 +124,32 @@ describe('LineRenderer', () => {
       const call = vi.mocked(context.page.drawLine).mock.calls[0]![0];
       expect(call.start).toEqual({ x: 0, y: 0 });
       expect(call.end).toEqual({ x: 100, y: 50 });
+    });
+
+    it('does not scale endpoints inside the renderer (transform layer handles scaling)', () => {
+      // For a line that, in canvas space, goes from (0,0) to (30,20),
+      // Fabric emits width=30, height=20 and center-normalized
+      //   x1=-15, y1=-10, x2=15, y2=10.
+      // Even with scaleX=2, scaleY=3 on the object, the renderer draws the
+      // intrinsic endpoints; the scale factor is applied by the transform CTM.
+      const renderer = new LineRenderer();
+      const line = createMockLine({
+        x1: -15,
+        y1: -10,
+        x2: 15,
+        y2: 10,
+        width: 30,
+        height: 20,
+        scaleX: 2,
+        scaleY: 3,
+      });
+      const context = createMockContext();
+
+      renderer.render(line, context.page, context);
+
+      const call = vi.mocked(context.page.drawLine).mock.calls[0]![0];
+      expect(call.start).toEqual({ x: 0, y: 0 });
+      expect(call.end).toEqual({ x: 30, y: 20 });
     });
 
     it('should apply stroke color', () => {
@@ -180,12 +213,16 @@ describe('LineRenderer', () => {
 
   describe('diagonal line', () => {
     it('should render diagonal line correctly', () => {
+      // A diagonal line from canvas (0,0) to (100,100) is serialized by
+      // Fabric as width=100, height=100, x1=-50, y1=-50, x2=50, y2=50.
       const renderer = new LineRenderer();
       const line = createMockLine({
-        x1: 0,
-        y1: 0,
-        x2: 100,
-        y2: 100,
+        x1: -50,
+        y1: -50,
+        x2: 50,
+        y2: 50,
+        width: 100,
+        height: 100,
       });
       const context = createMockContext();
 

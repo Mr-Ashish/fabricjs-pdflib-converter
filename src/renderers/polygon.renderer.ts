@@ -4,6 +4,7 @@ import { BaseRenderer } from './base-renderer';
 import type { FabricPolygonObject, RenderContext } from '../types';
 import { parseColor } from '../color';
 import { pointsToSvgPath } from '../core/path-utils';
+import { drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Renderer for Fabric.js polygon objects.
@@ -43,7 +44,7 @@ export class PolygonRenderer extends BaseRenderer {
       return;
     }
 
-    page.drawSvgPath(svgPath, {
+    drawSvgPathInCanvas(page, svgPath, {
       color: pdfFillColor,
       borderColor: pdfStrokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,

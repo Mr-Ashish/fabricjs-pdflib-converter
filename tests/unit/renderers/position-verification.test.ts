@@ -212,14 +212,12 @@ describe('Position Verification Tests', () => {
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0];
 
-      // Triangle with bbox center at (width/2, height/2), pointing up
-      // For width=60, height=60:
-      // - Top point at (30, 60) - higher Y in PDF
-      // - Base from (0, 0) to (60, 0)
-      // - Bbox center at (30, 30)
-      expect(path).toContain('M 30 60');
-      expect(path).toContain('L 0 0');
-      expect(path).toContain('L 60 0');
+      // Canvas-Y-down contract: tip at y=0 (top of bbox),
+      // base at y=height (bottom of bbox). Origin is handled by the
+      // transform layer, not the path.
+      expect(path).toContain('M 30 0');
+      expect(path).toContain('L 0 60');
+      expect(path).toContain('L 60 60');
     });
 
     it('should NOT multiply dimensions by scale in path generation', () => {
@@ -256,13 +254,12 @@ describe('Position Verification Tests', () => {
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0];
 
-      // Even with scaleX=2, scaleY=2, the path should use original dimensions
-      // This catches the "double scaling" bug
-      // Triangle with bbox center at (30, 30) for width=60, height=60
-      // Path: M 30 60 L 0 0 L 60 0
-      expect(path).toContain('M 30 60');
-      expect(path).toContain('L 0 0');
-      expect(path).not.toContain('L 0 120'); // Would be wrong if scaled in path
+      // Even with scaleX=2, scaleY=2, the path should use intrinsic
+      // width/height. Scaling is applied by the transform matrix.
+      // Canvas-Y-down: tip at y=0, base at y=height.
+      expect(path).toContain('M 30 0');
+      expect(path).toContain('L 0 60');
+      expect(path).not.toContain('L 0 120');
     });
   });
 

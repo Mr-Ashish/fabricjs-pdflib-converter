@@ -108,6 +108,8 @@ describe('EllipseRenderer', () => {
       renderer.render(ellipse, context.page, context);
 
       const call = vi.mocked(context.page.drawEllipse).mock.calls[0]![0];
+      expect(call.x).toBe(50);
+      expect(call.y).toBe(30);
       expect(call.xScale).toBe(50);
       expect(call.yScale).toBe(30);
     });

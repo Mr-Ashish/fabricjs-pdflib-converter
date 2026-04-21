@@ -68,9 +68,7 @@ function createMockContext(): RenderContext {
   return {
     pdfDoc: {} as RenderContext['pdfDoc'],
     page: {
-      pushGraphicsState: vi.fn(),
       pushOperators: vi.fn(),
-      popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
@@ -116,15 +114,15 @@ describe('GroupRenderer', () => {
   });
 
   describe('basic group rendering', () => {
-    it('should push and pop graphics state', async () => {
+    it('should push and pop graphics state via operators', async () => {
       const renderer = new GroupRenderer();
       const group = createMockGroup();
       const context = createMockContext();
 
       await renderer.render(group, context.page, context);
 
-      expect(context.page.pushGraphicsState).toHaveBeenCalled();
-      expect(context.page.popGraphicsState).toHaveBeenCalled();
+      // BaseRenderer wraps renderObject and GroupRenderer also wraps its children.
+      expect(context.page.pushOperators).toHaveBeenCalledTimes(4);
     });
 
     it('should render child objects', async () => {
@@ -244,8 +242,7 @@ describe('GroupRenderer', () => {
 
       await renderer.render(group, context.page, context);
 
-      expect(context.page.pushGraphicsState).toHaveBeenCalled();
-      expect(context.page.popGraphicsState).toHaveBeenCalled();
+      expect(context.page.pushOperators).toHaveBeenCalledTimes(4);
       expect(context.renderObject).not.toHaveBeenCalled();
     });
   });
