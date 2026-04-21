@@ -4,6 +4,11 @@ import {
   resolveOptions, 
   convertCanvasToPdf 
 } from '../../dist/index.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker for browser
+// @ts-expect-error - pdfjs worker configuration
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // Initialize Fabric canvas
 const canvasElement = document.getElementById('canvas') as HTMLCanvasElement;
@@ -57,6 +62,18 @@ canvasHeightInput.addEventListener('change', () => {
 
 // Export button
 document.getElementById('exportBtn')!.addEventListener('click', exportToPDF);
+
+// Copy JSON button
+document.getElementById('copyJsonBtn')!.addEventListener('click', copyCanvasJSON);
+
+// Preview PDF button
+document.getElementById('previewBtn')!.addEventListener('click', previewPDF);
+document.getElementById('previewClose')!.addEventListener('click', closePreview);
+document.getElementById('previewModal')!.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('previewModal')) {
+    closePreview();
+  }
+});
 
 // Add objects based on tool type
 function addObject(type: string) {
@@ -343,6 +360,101 @@ async function exportToPDF() {
     console.error('Export failed:', error);
     showStatus(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
   }
+}
+
+// Copy canvas JSON to clipboard
+function copyCanvasJSON() {
+  try {
+    const canvasJSON = canvas.toJSON([
+      'selectable',
+      'hasControls',
+      'hasBorders',
+      'lockMovementX',
+      'lockMovementY'
+    ]);
+    
+    const jsonString = JSON.stringify(canvasJSON, null, 2);
+    navigator.clipboard.writeText(jsonString).then(() => {
+      showStatus('Canvas JSON copied to clipboard!', 'success');
+      console.log('Canvas JSON:', jsonString);
+    }).catch((err) => {
+      console.error('Failed to copy:', err);
+      showStatus('Failed to copy JSON', 'error');
+    });
+  } catch (error) {
+    console.error('Copy failed:', error);
+    showStatus(`Copy failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+  }
+}
+
+// Preview PDF using pdf.js (simulates what pdf-to-img would generate)
+async function previewPDF() {
+  try {
+    showStatus('Generating PDF preview...', '');
+
+    // Get canvas JSON
+    const canvasJSON = canvas.toJSON([
+      'selectable',
+      'hasControls',
+      'hasBorders',
+      'lockMovementX',
+      'lockMovementY'
+    ]);
+
+    // Convert using our library
+    const parsed = parseCanvasJSON(canvasJSON);
+    const options = resolveOptions({
+      pageWidth: canvas.width,
+      pageHeight: canvas.height,
+      backgroundColor: canvas.backgroundColor as string
+    }, parsed);
+
+    const result = await convertCanvasToPdf(parsed, options);
+
+    // Show modal
+    const modal = document.getElementById('previewModal')!;
+    const loading = document.getElementById('previewLoading')!;
+    const previewCanvas = document.getElementById('previewCanvas') as HTMLCanvasElement;
+
+    modal.classList.add('show');
+    loading.style.display = 'block';
+    previewCanvas.style.display = 'none';
+
+    // Render PDF using pdf.js
+    const pdfData = new Uint8Array(result.pdfBytes);
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+    const page = await pdf.getPage(1);
+
+    // Set up canvas for rendering
+    const viewport = page.getViewport({ scale: 1.5 });
+    previewCanvas.width = viewport.width;
+    previewCanvas.height = viewport.height;
+
+    const ctx = previewCanvas.getContext('2d')!;
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+    // Render page
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+
+    loading.style.display = 'none';
+    previewCanvas.style.display = 'block';
+
+    showStatus('PDF preview generated', 'success');
+  } catch (error) {
+    console.error('Preview failed:', error);
+    showStatus(`Preview failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+    closePreview();
+  }
+}
+
+// Close preview modal
+function closePreview() {
+  const modal = document.getElementById('previewModal')!;
+  modal.classList.remove('show');
 }
 
 // Show status message

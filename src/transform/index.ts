@@ -77,8 +77,22 @@ export function applyTransformations(
   context: RenderContext,
 ): void {
   // Get object dimensions (handle missing height for text, etc.)
-  const objWidth = obj.width || 0;
-  const objHeight = obj.height || 0;
+  // For circles, calculate from radius. For ellipses, calculate from rx/ry.
+  // IMPORTANT: Use UNscaled dimensions for origin offset calculation.
+  // The scale matrix will handle scaling the origin offset.
+  let objWidth = obj.width || 0;
+  let objHeight = obj.height || 0;
+
+  if (obj.type === 'circle') {
+    const radius = (obj as { radius?: number }).radius ?? 0;
+    objWidth = radius * 2;
+    objHeight = radius * 2;
+  } else if (obj.type === 'ellipse') {
+    const rx = (obj as { rx?: number }).rx ?? 0;
+    const ry = (obj as { ry?: number }).ry ?? 0;
+    objWidth = rx * 2;
+    objHeight = ry * 2;
+  }
 
   // Get origin settings (default to 'center' as per Fabric.js)
   const originX = obj.originX || 'center';
@@ -93,58 +107,65 @@ export function applyTransformations(
   // In PDF: we need distance from bottom of page to the same origin point
   const pdfOriginY = context.options.pageHeight - obj.top;
 
-  // Build the transformation matrix manually with correct order
-  // We want: point' = Translate × Rotate × Scale × Skew × (point + originOffset)
-  // Which is equivalent to: point' = M × point + M × originOffset
-  // 
-  // For PDF, we need to apply transforms in this order (right to left):
-  // 1. Move to origin (apply origin offset)
-  // 2. Skew
-  // 3. Scale  
-  // 4. Rotate
-  // 5. Translate to final position
-  
-  // Start with identity
-  let matrix: [number, number, number, number, number, number] = [1, 0, 0, 1, 0, 0];
-  
-  // Step 1: Origin offset (move object so its origin is at 0,0)
-  if (originOffset.x !== 0 || originOffset.y !== 0) {
-    matrix = multiplyMatrices(matrix, [1, 0, 0, 1, originOffset.x, originOffset.y]);
-  }
-  
+  // Build the transformation matrix for scale, rotate, skew, and origin offset.
+  // Translation is applied SEPARATELY to avoid scaling the translation.
+  //
+  // We want: point' = Translate(Rotate(Scale(Skew(OriginOffset(point)))))
+  //
+  // In matrix form: p' = T × R × S × Skew × O × p
+  // Where O, Skew, S, R are matrices and T is a separate translation.
+
+  // Build the transform matrix (without translation): R × S × Skew × O
+  // multiplyMatrices(m1, m2) returns m2 × m1, so m1 is applied first.
+  // We want O applied first, so we start with O and multiply by Skew, S, R.
+
+  // Step 1: Origin offset (applied first to point)
+  let transformMatrix: [number, number, number, number, number, number] = [1, 0, 0, 1, originOffset.x, originOffset.y];
+
   // Step 2: Skew
-  if (obj.skewX !== 0 || obj.skewY !== 0) {
-    const skewXRad = (obj.skewX * Math.PI) / 180;
-    const skewYRad = (obj.skewY * Math.PI) / 180;
-    matrix = multiplyMatrices(matrix, [1, Math.tan(skewYRad), Math.tan(skewXRad), 1, 0, 0]);
+  const skewX = obj.skewX ?? 0;
+  const skewY = obj.skewY ?? 0;
+  if (skewX !== 0 || skewY !== 0) {
+    const skewXRad = (skewX * Math.PI) / 180;
+    const skewYRad = (skewY * Math.PI) / 180;
+    transformMatrix = multiplyMatrices(transformMatrix, [1, Math.tan(skewYRad), Math.tan(skewXRad), 1, 0, 0]);
   }
-  
+
   // Step 3: Scale (with flips)
-  const scaleX = obj.flipX ? -obj.scaleX : obj.scaleX;
-  const scaleY = obj.flipY ? -obj.scaleY : obj.scaleY;
+  const scaleXValue = obj.scaleX ?? 1;
+  const scaleYValue = obj.scaleY ?? 1;
+  const scaleX = obj.flipX ? -scaleXValue : scaleXValue;
+  const scaleY = obj.flipY ? -scaleYValue : scaleYValue;
   if (scaleX !== 1 || scaleY !== 1) {
-    matrix = multiplyMatrices(matrix, [scaleX, 0, 0, scaleY, 0, 0]);
+    transformMatrix = multiplyMatrices(transformMatrix, [scaleX, 0, 0, scaleY, 0, 0]);
   }
-  
+
   // Step 4: Rotate
-  if (obj.angle !== 0) {
-    const rad = (obj.angle * Math.PI) / 180;
+  const angle = obj.angle ?? 0;
+  if (angle !== 0) {
+    const rad = (angle * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
-    matrix = multiplyMatrices(matrix, [cos, sin, -sin, cos, 0, 0]);
+    transformMatrix = multiplyMatrices(transformMatrix, [cos, sin, -sin, cos, 0, 0]);
   }
-  
-  // Step 5: Translate to final position
+
+  // Apply transformations in the correct order.
+  // pdf-lib's concatTransformationMatrix multiplies: CTM = new_matrix × CTM
+  // So we apply transforms in REVERSE order of application:
+  // 1. Translation (applied last)
+  // 2. Rotate, Scale, Skew, Origin (applied first)
+
+  // Step 5: Apply translation first (will be rightmost in matrix multiplication)
   // For top origin, we need to adjust because pdf-lib draws upward from the given Y
-  // The origin is at the top edge, so we need to subtract height to position correctly
   let translateY = pdfOriginY;
   if (originY === 'top') {
     translateY -= objHeight;
   }
-  matrix = multiplyMatrices(matrix, [1, 0, 0, 1, obj.left, translateY]);
+  page.pushOperators(concatTransformationMatrix(1, 0, 0, 1, obj.left, translateY));
 
-  // Apply the transformation matrix to the page
-  const [a, b, c, d, e, f] = matrix;
+  // Apply the transformation matrix (scale, rotate, skew, origin)
+  // This will be multiplied on the LEFT, so it's applied FIRST to points
+  const [a, b, c, d, e, f] = transformMatrix;
   page.pushOperators(concatTransformationMatrix(a, b, c, d, e, f));
 }
 

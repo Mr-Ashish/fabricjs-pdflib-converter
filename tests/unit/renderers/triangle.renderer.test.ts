@@ -115,21 +115,50 @@ describe('TriangleRenderer', () => {
       expect(call).toContain('Z'); // Closed path
     });
 
-    it('should generate correct triangle path points', () => {
+    it('should generate correct triangle path points for center origin', () => {
       const renderer = new TriangleRenderer();
       const triangle = createMockTriangle({
         width: 60,
         height: 80,
+        originX: 'center',
+        originY: 'center',
       });
       const context = createMockContext();
 
       renderer.render(triangle, context.page, context);
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0] as string;
-      // Triangle points: bottom-left (0, height), top-center (width/2, 0), bottom-right (width, height)
-      expect(path).toContain('0 80'); // bottom-left
-      expect(path).toContain('30 0'); // top-center (width/2 = 30)
-      expect(path).toContain('60 80'); // bottom-right
+      // Triangle with center origin: point at higher Y in PDF coords
+      // For width=60, height=80:
+      // - Point at (30, 80) - higher Y in PDF (pointing up)
+      // - Base from (0, 0) to (60, 0)
+      // - After origin offset (-30, -40), bbox center is at origin
+      expect(path).toContain('M 30 80');
+      expect(path).toContain('L 0 0');
+      expect(path).toContain('L 60 0');
+    });
+
+    it('should generate correct triangle path points for top origin', () => {
+      const renderer = new TriangleRenderer();
+      const triangle = createMockTriangle({
+        width: 60,
+        height: 80,
+        originX: 'left',
+        originY: 'top',
+      });
+      const context = createMockContext();
+
+      renderer.render(triangle, context.page, context);
+
+      const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0] as string;
+      // Triangle with top origin: point at origin (top of bbox)
+      // For width=60, height=80:
+      // - Point at (30, 0) - at origin in local coords
+      // - Base at (0, -80) to (60, -80) - below origin
+      // - After origin offset (0, 0), point is at origin
+      expect(path).toContain('M 30 0');
+      expect(path).toContain('L 0 -80');
+      expect(path).toContain('L 60 -80');
     });
 
     it('should apply fill color', () => {

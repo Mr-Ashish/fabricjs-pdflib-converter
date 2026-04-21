@@ -44,6 +44,10 @@ export class CircleRenderer extends BaseRenderer {
   /**
    * Render a full circle.
    * Radius is NOT multiplied by scale - scaling is handled by the transformation matrix.
+   *
+   * Note: pdf-lib's drawCircle centers the circle at (x, y).
+   * We draw at (radius, radius) so the circle's edge is at (0, 0), matching
+   * how rectangles draw from their top-left corner.
    */
   private renderFullCircle(
     obj: FabricCircleObject,
@@ -53,11 +57,12 @@ export class CircleRenderer extends BaseRenderer {
   ): void {
     const radius = obj.radius;
 
-    // Draw at (0, 0) - the transformation matrix handles positioning
-    // pdf-lib's drawCircle draws the circle centered at (x, y)
+    // pdf-lib's drawCircle draws centered at (x, y) with size = radius (not diameter)
+    // We draw at (radius, radius) so the circle's bounding box is from (0, 0) to (2*radius, 2*radius)
+    // This matches how rectangles draw from their top-left corner
     page.drawCircle({
-      x: 0,
-      y: 0,
+      x: radius,
+      y: radius,
       size: radius,
       color: fillColor,
       borderColor: strokeColor,

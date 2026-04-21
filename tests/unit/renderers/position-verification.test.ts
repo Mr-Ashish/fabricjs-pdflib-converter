@@ -168,12 +168,12 @@ describe('Position Verification Tests', () => {
       renderer.render(circle, context.page, context);
 
       const call = vi.mocked(context.page.drawCircle).mock.calls[0]![0];
-      
-      // Circle should be drawn at (0, 0) in local coordinates
-      // The transformation matrix handles positioning to the correct location
-      expect(call.x).toBe(0);
-      expect(call.y).toBe(0);
-      expect(call.size).toBe(50);
+
+      // Circle should be drawn at (radius, radius) so its bounding box
+      // is from (0, 0) to (2*radius, 2*radius), matching rect behavior
+      expect(call.x).toBe(50);
+      expect(call.y).toBe(50);
+      expect(call.size).toBe(50); // radius (pdf-lib uses radius, not diameter)
     });
   });
 
@@ -211,12 +211,15 @@ describe('Position Verification Tests', () => {
       renderer.render(triangle, context.page, context);
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0];
-      
-      // Triangle path uses positive coordinates (0,0) to (width, height)
-      // Top point at (width/2, 0), bottom-left at (0, height), bottom-right at (width, height)
-      expect(path).toContain('M 30 0');
-      expect(path).toContain('L 0 60');
-      expect(path).toContain('L 60 60');
+
+      // Triangle with bbox center at (width/2, height/2), pointing up
+      // For width=60, height=60:
+      // - Top point at (30, 60) - higher Y in PDF
+      // - Base from (0, 0) to (60, 0)
+      // - Bbox center at (30, 30)
+      expect(path).toContain('M 30 60');
+      expect(path).toContain('L 0 0');
+      expect(path).toContain('L 60 0');
     });
 
     it('should NOT multiply dimensions by scale in path generation', () => {
@@ -252,11 +255,13 @@ describe('Position Verification Tests', () => {
       renderer.render(triangle, context.page, context);
 
       const path = vi.mocked(context.page.drawSvgPath).mock.calls[0]![0];
-      
+
       // Even with scaleX=2, scaleY=2, the path should use original dimensions
       // This catches the "double scaling" bug
-      expect(path).toContain('M 30 0');
-      expect(path).toContain('L 0 60');
+      // Triangle with bbox center at (30, 30) for width=60, height=60
+      // Path: M 30 60 L 0 0 L 60 0
+      expect(path).toContain('M 30 60');
+      expect(path).toContain('L 0 0');
       expect(path).not.toContain('L 0 120'); // Would be wrong if scaled in path
     });
   });

@@ -33,20 +33,21 @@ export class EllipseRenderer extends BaseRenderer {
     const pdfStrokeColor = strokeColor ? rgb(strokeColor.r, strokeColor.g, strokeColor.b) : undefined;
 
     // Use original radii - scaling is handled by transformation matrix
-    const xScale = obj.rx ?? 0;
-    const yScale = obj.ry ?? 0;
+    const xRadius = obj.rx ?? 0;
+    const yRadius = obj.ry ?? 0;
 
     // Skip if either radius is zero
-    if (xScale === 0 || yScale === 0) {
+    if (xRadius === 0 || yRadius === 0) {
       return;
     }
 
-    // Draw at (0, 0) - the transformation matrix handles positioning
+    // pdf-lib's drawEllipse centers at (x, y) with xScale/yScale as radii
+    // We draw at (0, 0) and let the transformation matrix handle positioning
     page.drawEllipse({
       x: 0,
       y: 0,
-      xScale,
-      yScale,
+      xScale: xRadius,
+      yScale: yRadius,
       color: pdfFillColor,
       borderColor: pdfStrokeColor,
       borderWidth: strokeColor ? obj.strokeWidth : 0,
