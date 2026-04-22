@@ -288,6 +288,89 @@ describe('TextRenderer', () => {
     });
   });
 
+  describe('Fabric-parity baseline positioning', () => {
+    // Fabric positions the first line's baseline at `fontSize * _fontSizeMult`
+    // below the textbox bbox top, where `_fontSizeMult = 1.13` is a hard-coded
+    // constant inside Fabric's Text class. Subsequent lines are spaced by
+    // `fontSize * lineHeight * _fontSizeMult`. Our renderer MUST match this
+    // exactly or text will sit at the wrong height inside the bbox, causing
+    // visible misalignment vs. what the user saw on the Fabric canvas.
+    const FABRIC_FONT_SIZE_MULT = 1.13;
+
+    // Decode a `cm` operator's (translateX, translateY) pair from the args
+    // that `drawTextInCanvas` pushed for a given draw call.
+    function cmY(
+      context: RenderContext,
+      drawIndex: number,
+    ): number {
+      const pushOps = vi.mocked(context.page.pushOperators).mock.calls;
+      type CmOp = { name: string; args: { numberValue: number }[] };
+      const cms = pushOps
+        .flatMap((call) => call)
+        .filter((op): op is CmOp => (op as CmOp).name === 'cm');
+      // drawTextInCanvas emits ONE `cm` per line (the baseline translate).
+      return cms[drawIndex]!.args[5]!.numberValue;
+    }
+
+    it('places the first-line baseline at fontSize * _fontSizeMult below bbox top', async () => {
+      const renderer = new TextRenderer();
+      const text = createMockText({
+        type: 'text',
+        text: 'Hello',
+        fontSize: 40,
+        lineHeight: 1.16,
+      });
+      const context = createMockContext();
+
+      await renderer.render(text, context.page, context);
+
+      expect(context.page.drawText).toHaveBeenCalledTimes(1);
+      const baselineY = cmY(context, 0);
+      expect(baselineY).toBeCloseTo(40 * FABRIC_FONT_SIZE_MULT, 5);
+    });
+
+    it('spaces successive lines by fontSize * lineHeight * _fontSizeMult', async () => {
+      const renderer = new TextRenderer();
+      const text = createMockText({
+        type: 'text',
+        text: 'Line A\nLine B\nLine C',
+        fontSize: 40,
+        lineHeight: 1.16,
+      });
+      const context = createMockContext();
+
+      await renderer.render(text, context.page, context);
+
+      const y0 = cmY(context, 0);
+      const y1 = cmY(context, 1);
+      const y2 = cmY(context, 2);
+
+      const expectedSpacing = 40 * 1.16 * FABRIC_FONT_SIZE_MULT;
+      expect(y1 - y0).toBeCloseTo(expectedSpacing, 5);
+      expect(y2 - y1).toBeCloseTo(expectedSpacing, 5);
+    });
+
+    it('applies the same formula to a wrapped textbox', async () => {
+      const renderer = new TextRenderer();
+      const textbox = createMockText({
+        type: 'textbox',
+        text: 'aaaa bbbb',
+        width: 25, // forces a wrap with fontSize=10 mock font
+        fontSize: 10,
+        lineHeight: 1.16,
+      });
+      const context = createMockContext();
+
+      await renderer.render(textbox, context.page, context);
+
+      expect(context.page.drawText).toHaveBeenCalledTimes(2);
+      const y0 = cmY(context, 0);
+      const y1 = cmY(context, 1);
+      expect(y0).toBeCloseTo(10 * FABRIC_FONT_SIZE_MULT, 5);
+      expect(y1 - y0).toBeCloseTo(10 * 1.16 * FABRIC_FONT_SIZE_MULT, 5);
+    });
+  });
+
   describe('textbox word wrapping', () => {
     // Mock font width = text.length * fontSize * 0.5.
     // With fontSize 10, each char is 5pt wide.

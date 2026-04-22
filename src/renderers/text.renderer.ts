@@ -8,9 +8,20 @@ import type {
   RenderContext,
 } from '../types';
 import { parseColor } from '../color';
-import { getTextWidth, getBaselineOffset } from '../fonts/font-metrics';
+import { getTextWidth } from '../fonts/font-metrics';
 import { wrapTextbox } from '../fonts/text-wrap';
 import { drawTextInCanvas } from './draw-helpers';
+
+/**
+ * Fabric's hard-coded `_fontSizeMult` constant (see `Text` class in fabric.js
+ * v5/v6). Fabric inflates every line's vertical extent by this factor so
+ * descenders never get clipped, AND shifts the first baseline down by the
+ * same factor. Both Fabric's bbox `height` and its baseline positioning bake
+ * this in — so if we want our PDF to sit at the same Y inside the textbox
+ * bbox as the canvas did, we must apply it too. Without it, text renders
+ * ~13% of fontSize too high, visibly climbing out of the bbox top.
+ */
+const FABRIC_FONT_SIZE_MULT = 1.13;
 
 /**
  * Union of all Fabric text-like objects this renderer handles. Using a
@@ -65,18 +76,18 @@ export class TextRenderer extends BaseRenderer {
               splitByGrapheme: obj.splitByGrapheme,
             })
           : obj.text.split('\n');
-      const lineHeight = obj.fontSize * obj.lineHeight;
-      const baselineOffset = getBaselineOffset(font, obj.fontSize);
+      // Match Fabric's line math exactly:
+      //   heightOfLine  = fontSize * lineHeight * _fontSizeMult
+      //   baselineY[0]  = fontSize * _fontSizeMult           (from bbox top)
+      //   baselineY[i]  = baselineY[0] + i * heightOfLine
+      // See `Text.getHeightOfLine` and `Text._renderTextCommon` in fabric.js.
+      const lineHeightPx = obj.fontSize * obj.lineHeight * FABRIC_FONT_SIZE_MULT;
+      const firstBaselineY = obj.fontSize * FABRIC_FONT_SIZE_MULT;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
 
-        // Baseline Y in canvas-Y-down: top of this line is `i * lineHeight`,
-        // baseline sits `(lineHeight - baselineOffset)` below the top —
-        // i.e. `baselineOffset` measures ascent from the baseline upward in
-        // PDF-Y-up, so distance from the line's top edge down to the baseline
-        // is `lineHeight - baselineOffset`.
-        const baselineY = i * lineHeight + (lineHeight - baselineOffset);
+        const baselineY = firstBaselineY + i * lineHeightPx;
 
         let xOffset = 0;
         if (obj.textAlign !== 'left') {
