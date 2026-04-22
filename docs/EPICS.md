@@ -545,13 +545,16 @@ test(renderer): add integration test for basic shapes
 - [ ] Render word-by-word with adjusted x positions.
 - [ ] Write unit tests.
 
-#### 9.5 Textbox word wrapping (NOT IMPLEMENTED - Future Work)
-- [ ] Implement word-wrap algorithm:
-  - Given the object's `width` and the font metrics, break text into lines.
-  - Measure word-by-word, accumulate until line exceeds width, then break.
-  - Handle long words that exceed the line width (break at character level).
-- [ ] Apply the wrapped lines to the multi-line rendering logic from 9.2.
-- [ ] Write unit tests: short text (no wrap), exact fit, wrap at word boundary, long single word.
+#### 9.5 Textbox word wrapping (COMPLETE)
+- [x] Implement word-wrap algorithm in `src/fonts/text-wrap.ts`:
+  - Split raw `text` on `\n` first; wrap each paragraph independently; preserve empty paragraphs.
+  - Default (Fabric parity): tokenize into word + whitespace runs; commit a line when the next token overflows `width`; drop whitespace that would become the leading whitespace of a new wrapped line; let single words wider than the box overflow intact.
+  - `splitByGrapheme: true`: tokenize by code-point graphemes so a long word breaks mid-stream; used for CJK and hard char-by-char wrap.
+  - `charSpacing` (1/1000 em) is added between characters inside a token when measuring.
+- [x] Apply wrapped lines to the multi-line rendering logic from 9.2 (only for `type === 'textbox'`; `text` and `i-text` keep explicit `\n` behavior).
+- [x] Unit tests in `tests/unit/fonts/text-wrap.test.ts`: empty input, fits unchanged, wrap at word boundary, long-word overflow, `splitByGrapheme` char break, `charSpacing` causes earlier wrap, explicit newlines, empty paragraphs, whitespace preservation.
+- [x] Renderer unit tests in `tests/unit/renderers/text.renderer.test.ts` for textbox wrap + plain-text no-wrap + y-positioning of wrapped lines.
+- [x] Integration tests in `tests/integration/textbox-wrap.integration.test.ts`.
 
 #### 9.6 Text decorations (NOT IMPLEMENTED - Future Work)
 - [ ] Implement `underline`: draw a line from `(lineX, baselineY - descentOffset)` to `(lineX + lineWidth, ...)`.
@@ -596,7 +599,7 @@ feat(text): implement text alignment with width-based offsets
 ...
 ```
 
-**Exit criteria:** ✅ **PARTIALLY COMPLETE** — Basic text (9.1), multi-line (9.2), and alignment (9.3) implemented. Advanced features (9.4-9.9) are future work.
+**Exit criteria:** ✅ **PARTIALLY COMPLETE** — Basic text (9.1), multi-line (9.2), alignment (9.3), and textbox word wrapping (9.5) implemented. Advanced features (9.4, 9.6–9.9) are future work.
 
 ---
 

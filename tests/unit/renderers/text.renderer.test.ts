@@ -287,4 +287,116 @@ describe('TextRenderer', () => {
       expect(context.warnings.add).toHaveBeenCalled();
     });
   });
+
+  describe('textbox word wrapping', () => {
+    // Mock font width = text.length * fontSize * 0.5.
+    // With fontSize 10, each char is 5pt wide.
+
+    it('wraps a textbox so the text flows to the next line when it exceeds width', async () => {
+      const renderer = new TextRenderer();
+      // Width 30pt, fontSize 10 → ~6 chars per line.
+      // "aaaa bbbb cccc" → wraps into 3 lines.
+      const textbox = createMockText({
+        type: 'textbox',
+        text: 'aaaa bbbb cccc',
+        width: 30,
+        fontSize: 10,
+      });
+      const context = createMockContext();
+
+      await renderer.render(textbox, context.page, context);
+
+      // A plain `text` object with the same string would render as ONE line
+      // (single `\n`-free string). The textbox must emit 3 calls.
+      expect(context.page.drawText).toHaveBeenCalledTimes(3);
+    });
+
+    it('does NOT auto-wrap a plain text object even if it would overflow its width', async () => {
+      const renderer = new TextRenderer();
+      const text = createMockText({
+        type: 'text',
+        text: 'aaaa bbbb cccc',
+        width: 30,
+        fontSize: 10,
+      });
+      const context = createMockContext();
+
+      await renderer.render(text, context.page, context);
+
+      // Plain text: no wrapping, just a single drawText (no \n in input).
+      expect(context.page.drawText).toHaveBeenCalledTimes(1);
+    });
+
+    it('respects explicit newlines in a textbox while also wrapping each paragraph', async () => {
+      const renderer = new TextRenderer();
+      const textbox = createMockText({
+        type: 'textbox',
+        text: 'aaaa bbbb\ncccc dddd',
+        width: 25,
+        fontSize: 10,
+      });
+      const context = createMockContext();
+
+      await renderer.render(textbox, context.page, context);
+
+      // Each paragraph wraps to 2 lines → 4 total.
+      expect(context.page.drawText).toHaveBeenCalledTimes(4);
+    });
+
+    it('uses splitByGrapheme to break long words mid-stream when set', async () => {
+      const renderer = new TextRenderer();
+      // One 8-char word in a 20pt box with 5pt-per-char font → 4 per line.
+      const textbox = createMockText({
+        type: 'textbox',
+        text: 'aaaaaaaa',
+        width: 20,
+        fontSize: 10,
+        // splitByGrapheme lives on FabricTextboxObject; tests cast through
+        // the partial helper.
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (textbox as any).splitByGrapheme = true;
+
+      const context = createMockContext();
+
+      await renderer.render(textbox, context.page, context);
+
+      expect(context.page.drawText).toHaveBeenCalledTimes(2);
+    });
+
+    it('positions wrapped lines with increasing y so they stack vertically', async () => {
+      const renderer = new TextRenderer();
+      const textbox = createMockText({
+        type: 'textbox',
+        text: 'aaaa bbbb cccc',
+        width: 30,
+        fontSize: 10,
+        lineHeight: 1.2,
+      });
+      const context = createMockContext();
+
+      await renderer.render(textbox, context.page, context);
+
+      expect(context.page.drawText).toHaveBeenCalledTimes(3);
+
+      // `drawTextInCanvas` encodes the baseline y into a `cm` (concat transform
+      // matrix) operator — the 6th matrix slot — then calls drawText(x:0, y:0).
+      // Inspect pushOperators calls to recover per-line baseline Y in canvas-Y-down.
+      const pushOps = vi.mocked(context.page.pushOperators).mock.calls;
+      type CmOp = { name: string; args: { numberValue: number }[] };
+      const matrixCalls = pushOps.filter((call) =>
+        call.some((op) => (op as CmOp).name === 'cm'),
+      );
+      expect(matrixCalls.length).toBeGreaterThanOrEqual(3);
+
+      const ys = matrixCalls.map((call) => {
+        const op = call.find((o) => (o as CmOp).name === 'cm') as CmOp;
+        return op.args[5]!.numberValue;
+      });
+
+      // Successive lines' baseline Y in canvas-Y-down strictly increases.
+      expect(ys[1]).toBeGreaterThan(ys[0]!);
+      expect(ys[2]).toBeGreaterThan(ys[1]!);
+    });
+  });
 });

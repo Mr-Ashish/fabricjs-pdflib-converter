@@ -1,10 +1,23 @@
 import { rgb } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
-import type { FabricTextObject, RenderContext } from '../types';
+import type {
+  FabricITextObject,
+  FabricTextObject,
+  FabricTextboxObject,
+  RenderContext,
+} from '../types';
 import { parseColor } from '../color';
 import { getTextWidth, getBaselineOffset } from '../fonts/font-metrics';
+import { wrapTextbox } from '../fonts/text-wrap';
 import { drawTextInCanvas } from './draw-helpers';
+
+/**
+ * Union of all Fabric text-like objects this renderer handles. Using a
+ * discriminated union lets TypeScript narrow on `obj.type` so we can branch
+ * safely into textbox-specific properties (like `splitByGrapheme`).
+ */
+type AnyFabricText = FabricTextObject | FabricITextObject | FabricTextboxObject;
 
 /**
  * Renderer for Fabric.js text objects (text, i-text, textbox).
@@ -29,7 +42,7 @@ export class TextRenderer extends BaseRenderer {
   }
 
   async renderObject(
-    obj: FabricTextObject,
+    obj: AnyFabricText,
     page: PDFPage,
     context: RenderContext,
   ): Promise<void> {
@@ -43,7 +56,15 @@ export class TextRenderer extends BaseRenderer {
       const fillColor = parseColor(obj.fill);
       const pdfColor = fillColor ? rgb(fillColor.r, fillColor.g, fillColor.b) : undefined;
 
-      const lines = obj.text.split('\n');
+      const lines =
+        obj.type === 'textbox'
+          ? wrapTextbox(obj.text, obj.width, {
+              font,
+              fontSize: obj.fontSize,
+              charSpacing: obj.charSpacing,
+              splitByGrapheme: obj.splitByGrapheme,
+            })
+          : obj.text.split('\n');
       const lineHeight = obj.fontSize * obj.lineHeight;
       const baselineOffset = getBaselineOffset(font, obj.fontSize);
 
