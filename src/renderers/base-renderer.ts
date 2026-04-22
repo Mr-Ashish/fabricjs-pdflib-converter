@@ -37,7 +37,7 @@ export abstract class BaseRenderer implements ObjectRenderer {
    * @param page - The PDF page to render to
    * @param context - Shared rendering context
    */
-  render(obj: FabricObject, page: PDFPage, context: RenderContext): void {
+  async render(obj: FabricObject, page: PDFPage, context: RenderContext): Promise<void> {
     // Skip invisible objects
     if (obj.visible === false) {
       return;
@@ -48,8 +48,9 @@ export abstract class BaseRenderer implements ObjectRenderer {
     page.pushOperators(pushGraphicsState());
 
     try {
-      // Delegate to subclass for actual drawing
-      this.renderObject(obj, page, context);
+      // Await async renderers (text, image, group) so CTM/graphics state stay
+      // valid until drawing completes; sync renderObject resolves immediately.
+      await Promise.resolve(this.renderObject(obj, page, context));
     } finally {
       // Always restore graphics state, even if rendering throws
       page.pushOperators(popGraphicsState());

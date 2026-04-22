@@ -138,6 +138,25 @@ interface ObjectRenderer {
 }
 ```
 
+### Canvas-to-PDF coordinate contract (mandatory)
+
+All conversion assumes **one local space** for geometry inside each object’s transform:
+
+- **Origin:** bounding-box **top-left** (same convention as Fabric’s box for `left` / `top`).
+- **Axes:** **X right, Y down** (canvas / Fabric-style), **1 unit = 1 Fabric pixel** before global `options.scale`.
+- **World → PDF:** `applyTransformations` in `src/transform/index.ts` is the **only** place that should combine global scale, page Y-flip, placement from `left`/`top`, origin offset, skew, object scale/flip, and rotation. Renderers must **not** reimplement page-level flips or “PDF Y-up” rotation matrices.
+
+**pdf-lib quirks (do not bypass):**
+
+- `PDFPage.drawSvgPath` applies an **internal Y-flip** (SVG vs PDF). Paths authored in canvas-Y-down must go through **`drawSvgPathInCanvas`** in `src/renderers/draw-helpers.ts`, which cancels that flip so local geometry matches the contract.
+- Text in the same local frame must use **`drawTextInCanvas`** from the same module (baseline math stays canvas-Y-down; glyphs stay upright).
+
+**Fabric serialization details:**
+
+- **`fabric.Line`** endpoints (`x1`, `y1`, `x2`, `y2`) are **center-normalized** relative to the line center; convert to bbox-top-left locals (e.g. add `width/2`, `height/2`) before drawing.
+
+**Going forward:** new renderers and path-based features use this contract and the helpers above; new tests should assert observable PDF/canvas alignment (see `scripts/verify-core-fixes.ts` for sanity checks on triangle orientation, line rotation, and scale anchoring).
+
 ### Immutability
 - Never mutate input data (the Fabric.js JSON objects). Always create new objects or work with copies.
 - Renderer methods must be side-effect-free except for their output (drawing to the PDFPage).
@@ -378,7 +397,7 @@ npm run test:coverage # With coverage report
 
 - **Never execute user-provided code.** The library processes data (JSON, font bytes, image bytes), not code.
 - **Validate image URLs** if an image resolver is provided. The library itself must not make network requests — that is the user's responsibility via `imageResolver`.
-- **Sanitize SVG path data** before passing to `drawSvgPath`. Malformed path strings could cause pdf-lib to throw or produce corrupt PDFs. Validate command structure before rendering.
+- **Sanitize SVG path data** before passing to `drawSvgPathInCanvas` / `drawSvgPath`. Malformed path strings could cause pdf-lib to throw or produce corrupt PDFs. Validate command structure before rendering.
 - **Limit recursion depth** for nested groups. Set a configurable maximum (default: 20 levels) to prevent stack overflow from malicious or cyclic JSON.
 - **Do not eval or parse executable content** from Fabric.js JSON. Only read declared data properties.
 - **Sanitize text content.** PDF text operators can be affected by certain control characters. Strip or escape characters that are not valid in PDF text streams.
@@ -535,5 +554,6 @@ When reviewing PRs, verify:
 - [ ] Is the function under 50 lines? Is the file under 400 lines?
 - [ ] Are there any `any` types? (There must not be.)
 - [ ] Does it work in both browser and Node.js?
+- [ ] Does rendering respect the **Canvas-to-PDF coordinate contract** (Section 5): local geometry in canvas-Y-down at bbox top-left; SVG paths and text via `draw-helpers`; no duplicate page flips outside `applyTransformations`?
 - [ ] Is the commit message following Conventional Commits?
 - [ ] Do all tests pass at every commit in the PR? (No broken intermediate commits.)

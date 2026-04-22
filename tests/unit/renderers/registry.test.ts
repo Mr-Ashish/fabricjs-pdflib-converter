@@ -47,6 +47,15 @@ describe('RendererRegistry', () => {
 
       expect(registry.get('rect')).toBe(renderer2);
     });
+
+    it('should register extra Fabric type aliases to the same renderer', () => {
+      const registry = new RendererRegistry();
+      const renderer = createMockRenderer('text');
+      registry.register(renderer, ['textbox', 'i-text']);
+      expect(registry.get('text')).toBe(renderer);
+      expect(registry.get('textbox')).toBe(renderer);
+      expect(registry.get('i-text')).toBe(renderer);
+    });
   });
 
   describe('get', () => {
@@ -119,9 +128,10 @@ describe('createDefaultRegistry', () => {
     expect(registry).toBeInstanceOf(RendererRegistry);
   });
 
-  it('should return registry with all built-in renderers registered', () => {
+    it('should return registry with all built-in renderers registered', () => {
     const registry = createDefaultRegistry();
-    expect(registry.getAll().size).toBe(11); // 5 shape + 3 vector path + 1 image + 1 text + 1 group renderers
+    // 5 shape + 3 vector path + 1 image + 1 text + 2 text aliases (i-text, textbox) + 1 group
+    expect(registry.getAll().size).toBe(13);
     expect(registry.has('rect')).toBe(true);
     expect(registry.has('circle')).toBe(true);
     expect(registry.has('ellipse')).toBe(true);
@@ -132,6 +142,8 @@ describe('createDefaultRegistry', () => {
     expect(registry.has('polygon')).toBe(true);
     expect(registry.has('image')).toBe(true);
     expect(registry.has('text')).toBe(true);
+    expect(registry.has('i-text')).toBe(true);
+    expect(registry.has('textbox')).toBe(true);
     expect(registry.has('group')).toBe(true);
   });
 });

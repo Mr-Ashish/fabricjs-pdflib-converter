@@ -23,9 +23,16 @@ export class RendererRegistry {
    * Overwrites any existing renderer for the same type.
    *
    * @param renderer - The renderer to register
+   * @param extraTypes - Optional Fabric `type` strings that map to the same renderer
+   *   (e.g. text + i-text + textbox all use {@link TextRenderer}).
    */
-  register(renderer: ObjectRenderer): void {
+  register(renderer: ObjectRenderer, extraTypes?: readonly string[]): void {
     this.renderers.set(renderer.type, renderer);
+    if (extraTypes) {
+      for (const t of extraTypes) {
+        this.renderers.set(t, renderer);
+      }
+    }
   }
 
   /**
@@ -82,8 +89,8 @@ export function createDefaultRegistry(): RendererRegistry {
   // Image renderer (Epic 7)
   registry.register(new ImageRenderer());
 
-  // Text renderer (Epic 9)
-  registry.register(new TextRenderer());
+  // Text renderer (Epic 9) — Fabric uses distinct `type` values for Text / IText / Textbox
+  registry.register(new TextRenderer(), ['i-text', 'textbox']);
 
   // Group renderer (Epic 10)
   registry.register(new GroupRenderer());

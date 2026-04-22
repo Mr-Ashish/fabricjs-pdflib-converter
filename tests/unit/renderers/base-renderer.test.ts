@@ -88,23 +88,23 @@ describe('BaseRenderer', () => {
   });
 
   describe('render', () => {
-    it('should skip invisible objects', () => {
+    it('should skip invisible objects', async () => {
       const renderer = new MockRenderer();
       const obj = createMockObject({ visible: false });
       const page = createMockContext().page;
       const context = createMockContext();
 
-      renderer.render(obj, page, context);
+      await renderer.render(obj, page, context);
 
       expect(renderer.renderObjectCalls).toHaveLength(0);
     });
 
-    it('should call renderObject for visible objects', () => {
+    it('should call renderObject for visible objects', async () => {
       const renderer = new MockRenderer();
       const obj = createMockObject({ visible: true });
       const context = createMockContext();
 
-      renderer.render(obj, context.page, context);
+      await renderer.render(obj, context.page, context);
 
       expect(renderer.renderObjectCalls).toHaveLength(1);
       expect(renderer.renderObjectCalls[0]!.obj).toBe(obj);
@@ -112,17 +112,17 @@ describe('BaseRenderer', () => {
       expect(renderer.renderObjectCalls[0]!.context).toBe(context);
     });
 
-    it('should call renderObject with correct arguments', () => {
+    it('should call renderObject with correct arguments', async () => {
       const renderer = new MockRenderer();
       const obj = createMockObject({ type: 'mock', left: 50, top: 100 });
       const context = createMockContext();
 
-      renderer.render(obj, context.page, context);
+      await renderer.render(obj, context.page, context);
 
       expect(renderer.renderObjectCalls[0]!.obj).toEqual(obj);
     });
 
-    it('should propagate errors from renderObject', () => {
+    it('should propagate errors from renderObject', async () => {
       const renderer = new MockRenderer();
       renderer.renderObject = () => {
         throw new Error('Render error');
@@ -130,7 +130,7 @@ describe('BaseRenderer', () => {
       const obj = createMockObject({ visible: true });
       const context = createMockContext();
 
-      expect(() => renderer.render(obj, context.page, context)).toThrow('Render error');
+      await expect(renderer.render(obj, context.page, context)).rejects.toThrow('Render error');
     });
   });
 

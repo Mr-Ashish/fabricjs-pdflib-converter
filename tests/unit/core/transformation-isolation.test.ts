@@ -64,7 +64,7 @@ describe('Transformation Isolation', () => {
     }
   }
 
-  it('should call pushGraphicsState before rendering', () => {
+  it('should call pushGraphicsState before rendering', async () => {
     const page = createMockPDFPage();
     const context = createMockContext(page);
     const renderer = new TestRenderer();
@@ -90,13 +90,13 @@ describe('Transformation Isolation', () => {
       visible: true,
     };
 
-    renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
 
     // pushGraphicsState is called through pushOperators
     expect(page.pushOperators).toHaveBeenCalledTimes(2); // 1 for push, 1 for pop
   });
 
-  it('should call popGraphicsState after rendering', () => {
+  it('should call popGraphicsState after rendering', async () => {
     const page = createMockPDFPage();
     const context = createMockContext(page);
     const renderer = new TestRenderer();
@@ -122,13 +122,13 @@ describe('Transformation Isolation', () => {
       visible: true,
     };
 
-    renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
 
     // popGraphicsState is called through pushOperators
     expect(page.pushOperators).toHaveBeenCalledTimes(2); // 1 for push, 1 for pop
   });
 
-  it('should balance push and pop calls', () => {
+  it('should balance push and pop calls', async () => {
     const page = createMockPDFPage();
     const context = createMockContext(page);
     const renderer = new TestRenderer();
@@ -154,13 +154,13 @@ describe('Transformation Isolation', () => {
       visible: true,
     };
 
-    renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
 
     // Both push and pop go through pushOperators (2 calls total)
     expect(page.pushOperators).toHaveBeenCalledTimes(2);
   });
 
-  it('should call popGraphicsState even if renderObject throws', () => {
+  it('should call popGraphicsState even if renderObject throws', async () => {
     const page = createMockPDFPage();
     const context = createMockContext(page);
     
@@ -199,13 +199,13 @@ describe('Transformation Isolation', () => {
       visible: true,
     };
 
-    // Should throw but pop should still be called (via pushOperators)
-    expect(() => renderer.render(obj, page, context)).toThrow('Render error');
+    // Should reject but pop should still be called (via pushOperators)
+    await expect(renderer.render(obj, page, context)).rejects.toThrow('Render error');
     // pushOperators called twice (push and pop)
     expect(page.pushOperators).toHaveBeenCalledTimes(2);
   });
 
-  it('should isolate transformations between multiple render calls', () => {
+  it('should isolate transformations between multiple render calls', async () => {
     const page = createMockPDFPage();
     const context = createMockContext(page);
     const renderer = new TestRenderer();
@@ -232,9 +232,9 @@ describe('Transformation Isolation', () => {
     };
 
     // Render 3 objects
-    renderer.render(obj, page, context);
-    renderer.render(obj, page, context);
-    renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
+    await renderer.render(obj, page, context);
 
     // Should have 3 push and 3 pop calls (6 total pushOperators calls)
     expect(page.pushOperators).toHaveBeenCalledTimes(6);
