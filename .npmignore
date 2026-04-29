@@ -1,0 +1,35 @@
+# Dependencies & build artifacts
+node_modules/
+.serverless/
+
+# Source (dist/ is the published output)
+src/
+scripts/
+examples/
+
+# Tests
+tests/
+tests-external/
+debug-output/
+
+# Demo app
+demo/
+
+# Docs (README.md is included via package.json files field)
+docs/
+
+# Config files
+tsconfig.json
+tsconfig.build.json
+tsup.config.ts
+vitest.config.ts
+vitest.external.config.ts
+eslint.config.mjs
+.eslintrc*
+.prettierrc*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.tgz

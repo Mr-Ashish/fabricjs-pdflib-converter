@@ -30,6 +30,12 @@ const FABRIC_FONT_SIZE_MULT = 1.13;
  */
 type AnyFabricText = FabricTextObject | FabricITextObject | FabricTextboxObject;
 
+function normalizeType(type: string): string {
+  const compact = type.trim().replace(/[_\s]+/g, '-').toLowerCase();
+  if (compact === 'itext') return 'i-text';
+  return compact;
+}
+
 /**
  * Renderer for Fabric.js text objects (text, i-text, textbox).
  *
@@ -49,7 +55,8 @@ export class TextRenderer extends BaseRenderer {
   readonly type = 'text';
 
   canRender(obj: { type: string }): boolean {
-    return obj.type === 'text' || obj.type === 'i-text' || obj.type === 'textbox';
+    const normalizedType = normalizeType(obj.type);
+    return normalizedType === 'text' || normalizedType === 'i-text' || normalizedType === 'textbox';
   }
 
   async renderObject(
@@ -67,8 +74,9 @@ export class TextRenderer extends BaseRenderer {
       const fillColor = parseColor(obj.fill);
       const pdfColor = fillColor ? rgb(fillColor.r, fillColor.g, fillColor.b) : undefined;
 
+      const normalizedType = normalizeType(obj.type);
       const lines =
-        obj.type === 'textbox'
+        normalizedType === 'textbox'
           ? wrapTextbox(obj.text, obj.width, {
               font,
               fontSize: obj.fontSize,

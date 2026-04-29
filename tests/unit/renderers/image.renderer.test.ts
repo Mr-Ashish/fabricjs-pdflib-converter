@@ -134,14 +134,14 @@ describe('ImageRenderer', () => {
 
       await renderer.render(image, context.page, context);
 
-      const call = vi.mocked(context.page.drawImage).mock.calls[0]![0];
+      const call = vi.mocked(context.page.drawImage).mock.calls[0]![1];
       expect(call).toMatchObject({
         width: 200,
         height: 150,
       });
     });
 
-    it('should apply scale to dimensions', async () => {
+    it('should keep intrinsic dimensions and let CTM handle object scale', async () => {
       const renderer = new ImageRenderer();
       const image = createMockImage({
         width: 100,
@@ -153,9 +153,25 @@ describe('ImageRenderer', () => {
 
       await renderer.render(image, context.page, context);
 
-      const call = vi.mocked(context.page.drawImage).mock.calls[0]![0];
-      expect(call.width).toBe(200); // 100 * 2
-      expect(call.height).toBe(150); // 100 * 1.5
+      const call = vi.mocked(context.page.drawImage).mock.calls[0]![1];
+      expect(call.width).toBe(100);
+      expect(call.height).toBe(100);
+    });
+
+    it('should compensate Y-axis flip to keep image upright', async () => {
+      const renderer = new ImageRenderer();
+      const image = createMockImage({
+        width: 120,
+        height: 80,
+      });
+      const context = createMockContext();
+
+      await renderer.render(image, context.page, context);
+
+      const options = vi.mocked(context.page.drawImage).mock.calls[0]![1];
+      expect(options.x).toBe(0);
+      expect(options.y).toBe(-80);
+      expect(context.page.pushOperators).toHaveBeenCalled();
     });
   });
 

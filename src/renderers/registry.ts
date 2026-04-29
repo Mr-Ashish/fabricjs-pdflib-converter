@@ -11,6 +11,12 @@ import { ImageRenderer } from './image.renderer';
 import { TextRenderer } from './text.renderer';
 import { GroupRenderer } from './group.renderer';
 
+function normalizeType(type: string): string {
+  const compact = type.trim().replace(/[_\s]+/g, '-').toLowerCase();
+  if (compact === 'itext') return 'i-text';
+  return compact;
+}
+
 /**
  * Registry that maps Fabric.js object type strings to their renderers.
  * Provides type-based lookup for the converter pipeline.
@@ -42,7 +48,9 @@ export class RendererRegistry {
    * @returns The renderer or undefined if not found
    */
   get(type: string): ObjectRenderer | undefined {
-    return this.renderers.get(type);
+    const direct = this.renderers.get(type);
+    if (direct) return direct;
+    return this.renderers.get(normalizeType(type));
   }
 
   /**
@@ -52,7 +60,7 @@ export class RendererRegistry {
    * @returns True if a renderer is registered
    */
   has(type: string): boolean {
-    return this.renderers.has(type);
+    return this.renderers.has(type) || this.renderers.has(normalizeType(type));
   }
 
   /**
@@ -75,25 +83,25 @@ export function createDefaultRegistry(): RendererRegistry {
   const registry = new RendererRegistry();
 
   // Shape renderers (Epic 5)
-  registry.register(new RectRenderer());
-  registry.register(new CircleRenderer());
-  registry.register(new EllipseRenderer());
-  registry.register(new TriangleRenderer());
-  registry.register(new LineRenderer());
+  registry.register(new RectRenderer(), ['Rect']);
+  registry.register(new CircleRenderer(), ['Circle']);
+  registry.register(new EllipseRenderer(), ['Ellipse']);
+  registry.register(new TriangleRenderer(), ['Triangle']);
+  registry.register(new LineRenderer(), ['Line']);
 
   // Vector path renderers (Epic 6)
-  registry.register(new PathRenderer());
-  registry.register(new PolylineRenderer());
-  registry.register(new PolygonRenderer());
+  registry.register(new PathRenderer(), ['Path']);
+  registry.register(new PolylineRenderer(), ['Polyline']);
+  registry.register(new PolygonRenderer(), ['Polygon']);
 
   // Image renderer (Epic 7)
-  registry.register(new ImageRenderer());
+  registry.register(new ImageRenderer(), ['Image']);
 
   // Text renderer (Epic 9) — Fabric uses distinct `type` values for Text / IText / Textbox
-  registry.register(new TextRenderer(), ['i-text', 'textbox']);
+  registry.register(new TextRenderer(), ['Text', 'IText', 'i-text', 'Textbox', 'textbox']);
 
   // Group renderer (Epic 10)
-  registry.register(new GroupRenderer());
+  registry.register(new GroupRenderer(), ['Group']);
 
   return registry;
 }

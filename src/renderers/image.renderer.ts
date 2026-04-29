@@ -1,5 +1,6 @@
 import type { PDFPage } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
+import { drawImageInCanvas } from './draw-helpers';
 import type { FabricImageObject, RenderContext } from '../types';
 
 /**
@@ -28,11 +29,11 @@ export class ImageRenderer extends BaseRenderer {
 
       // Draw the image
       // Position is handled by the transformation matrix
-      page.drawImage(image, {
+      drawImageInCanvas(page, image, {
         x: 0,
         y: 0,
-        width: width,
-        height: height,
+        width,
+        height,
       });
     } catch (error) {
       // Add warning and skip this image

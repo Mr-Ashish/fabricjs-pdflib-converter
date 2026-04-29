@@ -62,3 +62,28 @@ export function drawTextInCanvas(
   page.drawText(text, { x: 0, y: 0, ...rest });
   page.pushOperators(popGraphicsState());
 }
+
+/**
+ * Draw an image, interpreting x/y as top-left coordinates in the caller's
+ * canvas-local (Y-DOWN) frame while keeping image pixels upright.
+ *
+ * `drawImage` is naturally defined in a Y-up frame. Under our outer Y-down
+ * transform, calling it directly mirrors raster content vertically. This
+ * helper creates a local Y-up subtree, then maps top-left canvas coords to
+ * pdf-lib's lower-left image placement by using `y = -height`.
+ */
+export function drawImageInCanvas(
+  page: PDFPage,
+  image: Parameters<PDFPage['drawImage']>[0],
+  options: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } & Omit<NonNullable<Parameters<PDFPage['drawImage']>[1]>, 'x' | 'y' | 'width' | 'height'>,
+): void {
+  const { x, y, width, height, ...rest } = options;
+  page.pushOperators(pushGraphicsState(), concatTransformationMatrix(1, 0, 0, -1, x, y));
+  page.drawImage(image, { x: 0, y: -height, width, height, ...rest });
+  page.pushOperators(popGraphicsState());
+}
