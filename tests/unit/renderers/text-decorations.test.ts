@@ -237,7 +237,7 @@ describe('justify alignment', () => {
     const renderer = new TextRenderer();
     const text = createMockText({
       textAlign: 'justify',
-      text: 'only line here',
+      text: 'hello world\nlast line here',
       width: 200,
       fontSize: 20,
     });

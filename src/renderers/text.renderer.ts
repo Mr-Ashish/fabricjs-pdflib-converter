@@ -167,8 +167,7 @@ export class TextRenderer extends BaseRenderer {
           const isLastLine = i === lines.length - 1;
           const spaceCount = line.split(' ').length - 1;
           if (!isLastLine && spaceCount > 0) {
-            const extraSpace = obj.width - lineWidth;
-            wordSpacingPt = extraSpace / spaceCount;
+            wordSpacingPt = Math.max(0, (obj.width - lineWidth) / spaceCount);
           }
           // justify last line = left-aligned, xOffset stays 0
         } else if (obj.textAlign === 'center') {
