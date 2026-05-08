@@ -10,7 +10,7 @@ import type {
 import { parseColor } from '../color';
 import { getTextWidth } from '../fonts/font-metrics';
 import { wrapTextbox } from '../fonts/text-wrap';
-import { drawTextInCanvas } from './draw-helpers';
+import { drawTextInCanvas, drawSvgPathInCanvas } from './draw-helpers';
 
 /**
  * Fabric's hard-coded `_fontSizeMult` constant (see `Text` class in fabric.js
@@ -34,6 +34,60 @@ function normalizeType(type: string): string {
   const compact = type.trim().replace(/[_\s]+/g, '-').toLowerCase();
   if (compact === 'itext') return 'i-text';
   return compact;
+}
+
+function drawDecoratedLine(
+  page: PDFPage,
+  xOffset: number,
+  baselineY: number,
+  lineHeightPx: number,
+  fontSize: number,
+  lineWidth: number,
+  pdfColor: ReturnType<typeof rgb> | undefined,
+  options: {
+    textBackgroundColor?: string | null;
+    underline?: boolean;
+    linethrough?: boolean;
+    overline?: boolean;
+  },
+): void {
+  const thickness = Math.max(1, fontSize / 15);
+
+  if (options.textBackgroundColor) {
+    const bgColor = parseColor(options.textBackgroundColor);
+    if (bgColor) {
+      const bgPdfColor = rgb(bgColor.r, bgColor.g, bgColor.b);
+      const bgTop = baselineY - fontSize * FABRIC_FONT_SIZE_MULT;
+      drawSvgPathInCanvas(page,
+        `M ${xOffset} ${bgTop} h ${lineWidth} v ${lineHeightPx} h ${-lineWidth} Z`,
+        { color: bgPdfColor },
+      );
+    }
+  }
+
+  if (options.underline) {
+    const y = baselineY + fontSize * 0.07;
+    drawSvgPathInCanvas(page,
+      `M ${xOffset} ${y} h ${lineWidth} v ${thickness} h ${-lineWidth} Z`,
+      { color: pdfColor },
+    );
+  }
+
+  if (options.linethrough) {
+    const y = baselineY - fontSize * 0.35;
+    drawSvgPathInCanvas(page,
+      `M ${xOffset} ${y} h ${lineWidth} v ${thickness} h ${-lineWidth} Z`,
+      { color: pdfColor },
+    );
+  }
+
+  if (options.overline) {
+    const y = baselineY - fontSize * 0.85;
+    drawSvgPathInCanvas(page,
+      `M ${xOffset} ${y} h ${lineWidth} v ${thickness} h ${-lineWidth} Z`,
+      { color: pdfColor },
+    );
+  }
 }
 
 /**
@@ -95,18 +149,22 @@ export class TextRenderer extends BaseRenderer {
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
-
         const baselineY = firstBaselineY + i * lineHeightPx;
 
+        // Always compute lineWidth (needed for alignment, bg, and decorations)
+        const lineWidth = getTextWidth(font, line, obj.fontSize);
+
         let xOffset = 0;
-        if (obj.textAlign !== 'left') {
-          const lineWidth = getTextWidth(font, line, obj.fontSize);
-          if (obj.textAlign === 'center') {
-            xOffset = (obj.width - lineWidth) / 2;
-          } else if (obj.textAlign === 'right') {
-            xOffset = obj.width - lineWidth;
-          }
+        if (obj.textAlign === 'center') {
+          xOffset = (obj.width - lineWidth) / 2;
+        } else if (obj.textAlign === 'right') {
+          xOffset = obj.width - lineWidth;
         }
+
+        // Background (drawn before text)
+        drawDecoratedLine(page, xOffset, baselineY, lineHeightPx, obj.fontSize, lineWidth, pdfColor, {
+          textBackgroundColor: obj.textBackgroundColor,
+        });
 
         if (charSpacingPt !== 0) {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(charSpacingPt)]));
@@ -123,6 +181,13 @@ export class TextRenderer extends BaseRenderer {
         if (charSpacingPt !== 0) {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(0)]));
         }
+
+        // Decorations (drawn after text)
+        drawDecoratedLine(page, xOffset, baselineY, lineHeightPx, obj.fontSize, lineWidth, pdfColor, {
+          underline: obj.underline,
+          linethrough: obj.linethrough,
+          overline: obj.overline,
+        });
       }
     } catch (error) {
       context.warnings.add({

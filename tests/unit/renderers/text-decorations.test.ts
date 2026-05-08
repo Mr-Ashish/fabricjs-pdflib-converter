@@ -117,3 +117,87 @@ describe('charSpacing', () => {
     expect(tcOp).toBeUndefined();
   });
 });
+
+describe('textBackgroundColor', () => {
+  it('calls drawSvgPath for background rect when textBackgroundColor is set', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ textBackgroundColor: '#ffff00' });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalled();
+  });
+
+  it('does NOT call drawSvgPath for background when textBackgroundColor is null', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ textBackgroundColor: null });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).not.toHaveBeenCalled();
+  });
+});
+
+describe('text decorations', () => {
+  it('draws an extra drawSvgPath when underline is true', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ underline: true });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalled();
+  });
+
+  it('draws an extra drawSvgPath when linethrough is true', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ linethrough: true });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalled();
+  });
+
+  it('draws an extra drawSvgPath when overline is true', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ overline: true });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalled();
+  });
+
+  it('draws NO extra drawSvgPath when all decorations are false and no background', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ underline: false, linethrough: false, overline: false, textBackgroundColor: null });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).not.toHaveBeenCalled();
+  });
+
+  it('draws 3 decoration paths when all three decorations are enabled', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ underline: true, linethrough: true, overline: true, text: 'hello' });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(3);
+  });
+
+  it('draws decoration paths for each line in multi-line text', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ underline: true, text: 'line1\nline2' });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(2);
+  });
+});
