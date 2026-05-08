@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { BaseRenderer } from '../../../src/renderers/base-renderer';
 import type { FabricObject, RenderContext } from '../../../src/types';
 import type { PDFPage } from 'pdf-lib';
+import { PDFName } from 'pdf-lib';
 
 // Mock concrete renderer for testing
 class MockRenderer extends BaseRenderer {
@@ -42,11 +43,25 @@ function createMockObject(overrides: Partial<FabricObject> = {}): FabricObject {
   } as FabricObject;
 }
 
-// Factory for creating mock context
-function createMockContext(overrides: Partial<RenderContext> = {}): RenderContext {
+// Factory for creating a mock PDFPage with node.newExtGState support
+function createMockPage(): PDFPage {
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
-    page: {
+    pushOperators: vi.fn(),
+    node: {
+      newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+    },
+  } as unknown as PDFPage;
+}
+
+// Factory for creating mock context
+function createMockContext(page?: PDFPage, overrides: Partial<RenderContext> = {}): RenderContext {
+  return {
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
+    page: page ?? {
       pushOperators: vi.fn(),
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
@@ -194,6 +209,46 @@ describe('BaseRenderer', () => {
       renderer.applyStrokeProperties(page, [10, 5], 'round', 'bevel', 1);
 
       expect(page.pushOperators).toHaveBeenCalled();
+    });
+  });
+
+  describe('opacity and blend mode', () => {
+    it('calls applyGraphicsState (emits gs op) when opacity < 1', async () => {
+      class TestRenderer extends BaseRenderer {
+        readonly type = 'rect';
+        renderObject = vi.fn();
+      }
+      const renderer = new TestRenderer();
+      const obj = createMockObject({ opacity: 0.5 });
+      const page = createMockPage();
+      const context = createMockContext(page);
+
+      await renderer.render(obj as unknown as FabricObject, page, context);
+
+      const allOpCalls = vi.mocked(page.pushOperators).mock.calls.flat();
+      const hasGsOp = allOpCalls.some(
+        (op) => typeof op === 'object' && op !== null && (op as unknown as { name?: string }).name === 'gs',
+      );
+      expect(hasGsOp).toBe(true);
+    });
+
+    it('does not emit gs operator when opacity is 1 and blendMode is source-over', async () => {
+      class TestRenderer extends BaseRenderer {
+        readonly type = 'rect';
+        renderObject = vi.fn();
+      }
+      const renderer = new TestRenderer();
+      const obj = createMockObject({ opacity: 1, globalCompositeOperation: 'source-over' });
+      const page = createMockPage();
+      const context = createMockContext(page);
+
+      await renderer.render(obj as unknown as FabricObject, page, context);
+
+      const allOpCalls = vi.mocked(page.pushOperators).mock.calls.flat();
+      const hasGsOp = allOpCalls.some(
+        (op) => typeof op === 'object' && op !== null && (op as unknown as { name?: string }).name === 'gs',
+      );
+      expect(hasGsOp).toBe(false);
     });
   });
 });

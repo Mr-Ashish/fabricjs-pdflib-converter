@@ -1,6 +1,7 @@
 import type { PDFPage } from 'pdf-lib';
 import { setDashPattern, setLineCap, setLineJoin, pushGraphicsState, popGraphicsState } from 'pdf-lib';
 import type { FabricObject, RenderContext, ObjectRenderer, StrokeLineCap, StrokeLineJoin } from '../types';
+import { applyGraphicsState } from './graphics-state';
 
 /**
  * Abstract base class for all object renderers.
@@ -46,6 +47,10 @@ export abstract class BaseRenderer implements ObjectRenderer {
     // Save graphics state before applying transformations
     // This ensures each object is rendered in isolation
     page.pushOperators(pushGraphicsState());
+
+    const opacity = obj.opacity ?? 1;
+    const blendMode = obj.globalCompositeOperation ?? 'source-over';
+    applyGraphicsState(page, context.pdfDoc, { opacity, blendMode });
 
     try {
       // Await async renderers (text, image, group) so CTM/graphics state stay
