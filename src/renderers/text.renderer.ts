@@ -235,16 +235,15 @@ export class TextRenderer extends BaseRenderer {
       // See `Text.getHeightOfLine` and `Text._renderTextCommon` in fabric.js.
       const lineHeightPx = obj.fontSize * obj.lineHeight * FABRIC_FONT_SIZE_MULT;
       const firstBaselineY = obj.fontSize * FABRIC_FONT_SIZE_MULT;
+      // Shared across all lines so identical (family, weight, style) tuples
+      // that appear on multiple lines don't trigger redundant resolve() calls.
+      const fontCache = new Map<string, PDFFont>();
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
         const baselineY = firstBaselineY + i * lineHeightPx;
 
         const runs = buildStyleRuns(line, i, obj);
-
-        // Resolve fonts for all runs (with caching so the same combo
-        // doesn't invoke fontManager.resolve twice on a line).
-        const fontCache = new Map<string, PDFFont>();
         const resolvedRuns: Array<{
           text: string;
           style: EffectiveCharStyle;
@@ -299,6 +298,7 @@ export class TextRenderer extends BaseRenderer {
         for (const rr of resolvedRuns) {
           const runFillColor = parseColor(rr.style.fill);
           const runPdfColor = runFillColor ? rgb(runFillColor.r, runFillColor.g, runFillColor.b) : undefined;
+          // charSpacing is an object-level property (not per-character in Fabric's schema)
           const runCharSpacingPt =
             obj.charSpacing !== 0 ? (obj.charSpacing / 1000) * rr.style.fontSize : 0;
 
