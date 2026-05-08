@@ -1,4 +1,4 @@
-import { rgb } from 'pdf-lib';
+import { rgb, PDFOperator, PDFNumber, PDFOperatorNames } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 import { BaseRenderer } from './base-renderer';
 import type {
@@ -91,6 +91,7 @@ export class TextRenderer extends BaseRenderer {
       // See `Text.getHeightOfLine` and `Text._renderTextCommon` in fabric.js.
       const lineHeightPx = obj.fontSize * obj.lineHeight * FABRIC_FONT_SIZE_MULT;
       const firstBaselineY = obj.fontSize * FABRIC_FONT_SIZE_MULT;
+      const charSpacingPt = obj.charSpacing !== 0 ? (obj.charSpacing / 1000) * obj.fontSize : 0;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
@@ -107,6 +108,10 @@ export class TextRenderer extends BaseRenderer {
           }
         }
 
+        if (charSpacingPt !== 0) {
+          page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(charSpacingPt)]));
+        }
+
         drawTextInCanvas(page, line, {
           x: xOffset,
           y: baselineY,
@@ -114,6 +119,10 @@ export class TextRenderer extends BaseRenderer {
           font,
           color: pdfColor,
         });
+
+        if (charSpacingPt !== 0) {
+          page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(0)]));
+        }
       }
     } catch (error) {
       context.warnings.add({
