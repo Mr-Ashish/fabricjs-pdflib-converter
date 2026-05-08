@@ -2,6 +2,7 @@ import type { PDFPage } from 'pdf-lib';
 import { setDashPattern, setLineCap, setLineJoin, pushGraphicsState, popGraphicsState } from 'pdf-lib';
 import type { FabricObject, RenderContext, ObjectRenderer, StrokeLineCap, StrokeLineJoin } from '../types';
 import { applyGraphicsState } from './graphics-state';
+import { traceClipPath } from './clip-path';
 
 /**
  * Abstract base class for all object renderers.
@@ -51,6 +52,11 @@ export abstract class BaseRenderer implements ObjectRenderer {
     const opacity = obj.opacity ?? 1;
     const blendMode = obj.globalCompositeOperation ?? 'source-over';
     applyGraphicsState(page, context.pdfDoc, { opacity, blendMode });
+
+    // Apply clip path if present
+    if (obj.clipPath) {
+      traceClipPath(obj.clipPath, page);
+    }
 
     try {
       // Await async renderers (text, image, group) so CTM/graphics state stay
