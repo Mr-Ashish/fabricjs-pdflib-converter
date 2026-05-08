@@ -161,7 +161,17 @@ export class TextRenderer extends BaseRenderer {
         const lineWidth = getTextWidth(font, line, obj.fontSize);
 
         let xOffset = 0;
-        if (obj.textAlign === 'center') {
+        let wordSpacingPt = 0;
+
+        if (obj.textAlign === 'justify') {
+          const isLastLine = i === lines.length - 1;
+          const spaceCount = line.split(' ').length - 1;
+          if (!isLastLine && spaceCount > 0) {
+            const extraSpace = obj.width - lineWidth;
+            wordSpacingPt = extraSpace / spaceCount;
+          }
+          // justify last line = left-aligned, xOffset stays 0
+        } else if (obj.textAlign === 'center') {
           xOffset = (obj.width - lineWidth) / 2;
         } else if (obj.textAlign === 'right') {
           xOffset = obj.width - lineWidth;
@@ -176,6 +186,10 @@ export class TextRenderer extends BaseRenderer {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(charSpacingPt)]));
         }
 
+        if (wordSpacingPt !== 0) {
+          page.pushOperators(PDFOperator.of(PDFOperatorNames.SetWordSpacing, [PDFNumber.of(wordSpacingPt)]));
+        }
+
         drawTextInCanvas(page, line, {
           x: xOffset,
           y: baselineY,
@@ -186,6 +200,10 @@ export class TextRenderer extends BaseRenderer {
 
         if (charSpacingPt !== 0) {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(0)]));
+        }
+
+        if (wordSpacingPt !== 0) {
+          page.pushOperators(PDFOperator.of(PDFOperatorNames.SetWordSpacing, [PDFNumber.of(0)]));
         }
 
         // Decorations (drawn after text so they render on top)

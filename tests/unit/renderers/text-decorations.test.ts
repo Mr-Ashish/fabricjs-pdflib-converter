@@ -212,3 +212,57 @@ describe('text decorations', () => {
     expect(context.page.drawSvgPath).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('justify alignment', () => {
+  it('emits Tw operator for justify on non-last lines that contain spaces', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({
+      textAlign: 'justify',
+      text: 'hello world\nsecond line',
+      width: 200,
+      fontSize: 20,
+    });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    const allOps = vi.mocked(context.page.pushOperators).mock.calls.flat();
+    const twOps = allOps.filter(
+      (op) => typeof op === 'object' && op !== null && (op as { name?: string }).name === 'Tw',
+    );
+    expect(twOps.length).toBeGreaterThan(0);
+  });
+
+  it('does NOT emit Tw for the last line in justify mode', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({
+      textAlign: 'justify',
+      text: 'only line here',
+      width: 200,
+      fontSize: 20,
+    });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    const allOps = vi.mocked(context.page.pushOperators).mock.calls.flat();
+    const twOps = allOps.filter(
+      (op) => typeof op === 'object' && op !== null && (op as { name?: string }).name === 'Tw',
+    );
+    expect(twOps).toHaveLength(0);
+  });
+
+  it('does NOT emit Tw for left/center/right alignment', async () => {
+    for (const align of ['left', 'center', 'right'] as const) {
+      const renderer = new TextRenderer();
+      const text = createMockText({ textAlign: align, text: 'hello world test', width: 200 });
+      const context = createMockContext();
+      await renderer.render(text, context.page, context);
+      const allOps = vi.mocked(context.page.pushOperators).mock.calls.flat();
+      const twOps = allOps.filter(
+        (op) => typeof op === 'object' && op !== null && (op as { name?: string }).name === 'Tw',
+      );
+      expect(twOps).toHaveLength(0);
+    }
+  });
+});
