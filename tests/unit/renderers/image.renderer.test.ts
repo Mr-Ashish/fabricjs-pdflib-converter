@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ImageRenderer } from '../../../src/renderers/image.renderer';
 import type { FabricImageObject, RenderContext } from '../../../src/types';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage, PDFImage } from 'pdf-lib';
 
 // Factory for creating mock image objects
@@ -49,13 +50,20 @@ function createMockContext(): RenderContext {
   } as PDFImage;
 
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
     page: {
       drawImage: vi.fn(),
       pushGraphicsState: vi.fn(),
       pushOperators: vi.fn(),
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
+      node: {
+        newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+      },
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {

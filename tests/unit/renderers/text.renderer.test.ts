@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { TextRenderer } from '../../../src/renderers/text.renderer';
 import type { FabricTextObject, RenderContext } from '../../../src/types';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage, PDFFont } from 'pdf-lib';
 
 // Mock PDFFont
@@ -63,13 +64,20 @@ function createMockContext(): RenderContext {
   const mockFont = createMockPDFFont();
 
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
     page: {
       drawText: vi.fn(),
       pushGraphicsState: vi.fn(),
       pushOperators: vi.fn(),
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
+      node: {
+        newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+      },
     } as unknown as PDFPage,
     fontManager: {
       resolve: vi.fn().mockResolvedValue(mockFont),

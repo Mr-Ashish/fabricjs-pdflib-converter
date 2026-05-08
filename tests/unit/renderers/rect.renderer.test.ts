@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { RectRenderer } from '../../../src/renderers/rect.renderer';
 import type { FabricRectObject, RenderContext } from '../../../src/types';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 
 // Factory for creating mock rect objects
@@ -39,7 +40,11 @@ function createMockRect(overrides: Partial<FabricRectObject> = {}): FabricRectOb
 // Factory for creating mock context
 function createMockContext(): RenderContext {
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
     page: {
       drawRectangle: vi.fn(),
       drawSvgPath: vi.fn(),
@@ -47,6 +52,9 @@ function createMockContext(): RenderContext {
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
       pushOperators: vi.fn(),
+      node: {
+        newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+      },
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],

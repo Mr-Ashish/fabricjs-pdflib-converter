@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { LineRenderer } from '../../../src/renderers/line.renderer';
 import type { FabricLineObject, RenderContext } from '../../../src/types';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 
 // Factory for creating mock line objects
@@ -41,13 +42,20 @@ function createMockLine(overrides: Partial<FabricLineObject> = {}): FabricLineOb
 // Factory for creating mock context
 function createMockContext(): RenderContext {
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
     page: {
       drawLine: vi.fn(),
       pushGraphicsState: vi.fn(),
       pushOperators: vi.fn(),
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
+      node: {
+        newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+      },
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],

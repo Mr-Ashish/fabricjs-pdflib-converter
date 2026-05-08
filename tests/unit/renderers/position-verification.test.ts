@@ -3,6 +3,7 @@ import { RectRenderer } from '../../../src/renderers/rect.renderer';
 import { CircleRenderer } from '../../../src/renderers/circle.renderer';
 import { TriangleRenderer } from '../../../src/renderers/triangle.renderer';
 import type { FabricRectObject, FabricCircleObject, FabricTriangleObject, RenderContext } from '../../../src/types';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage } from 'pdf-lib';
 
 /**
@@ -12,7 +13,11 @@ import type { PDFPage } from 'pdf-lib';
 
 function createMockContext(): RenderContext {
   return {
-    pdfDoc: {} as RenderContext['pdfDoc'],
+    pdfDoc: {
+      context: {
+        obj: vi.fn().mockReturnValue({}),
+      },
+    } as unknown as RenderContext['pdfDoc'],
     page: {
       drawRectangle: vi.fn(),
       drawCircle: vi.fn(),
@@ -21,6 +26,9 @@ function createMockContext(): RenderContext {
       popGraphicsState: vi.fn(),
       concatTransformationMatrix: vi.fn(),
       pushOperators: vi.fn(),
+      node: {
+        newExtGState: vi.fn().mockReturnValue(PDFName.of('GS_0000')),
+      },
     } as unknown as PDFPage,
     fontManager: {} as RenderContext['fontManager'],
     imageLoader: {} as RenderContext['imageLoader'],
