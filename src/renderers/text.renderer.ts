@@ -36,34 +36,40 @@ function normalizeType(type: string): string {
   return compact;
 }
 
-function drawDecoratedLine(
+function drawTextBackground(
   page: PDFPage,
   xOffset: number,
   baselineY: number,
   lineHeightPx: number,
   fontSize: number,
   lineWidth: number,
+  backgroundColor: string,
+): void {
+  const bgColor = parseColor(backgroundColor);
+  if (bgColor) {
+    const bgPdfColor = rgb(bgColor.r, bgColor.g, bgColor.b);
+    const bgTop = baselineY - fontSize * FABRIC_FONT_SIZE_MULT;
+    drawSvgPathInCanvas(page,
+      `M ${xOffset} ${bgTop} h ${lineWidth} v ${lineHeightPx} h ${-lineWidth} Z`,
+      { color: bgPdfColor },
+    );
+  }
+}
+
+function drawTextDecorations(
+  page: PDFPage,
+  xOffset: number,
+  baselineY: number,
+  fontSize: number,
+  lineWidth: number,
   pdfColor: ReturnType<typeof rgb> | undefined,
   options: {
-    textBackgroundColor?: string | null;
     underline?: boolean;
     linethrough?: boolean;
     overline?: boolean;
   },
 ): void {
   const thickness = Math.max(1, fontSize / 15);
-
-  if (options.textBackgroundColor) {
-    const bgColor = parseColor(options.textBackgroundColor);
-    if (bgColor) {
-      const bgPdfColor = rgb(bgColor.r, bgColor.g, bgColor.b);
-      const bgTop = baselineY - fontSize * FABRIC_FONT_SIZE_MULT;
-      drawSvgPathInCanvas(page,
-        `M ${xOffset} ${bgTop} h ${lineWidth} v ${lineHeightPx} h ${-lineWidth} Z`,
-        { color: bgPdfColor },
-      );
-    }
-  }
 
   if (options.underline) {
     const y = baselineY + fontSize * 0.07;
@@ -161,10 +167,10 @@ export class TextRenderer extends BaseRenderer {
           xOffset = obj.width - lineWidth;
         }
 
-        // Background (drawn before text)
-        drawDecoratedLine(page, xOffset, baselineY, lineHeightPx, obj.fontSize, lineWidth, pdfColor, {
-          textBackgroundColor: obj.textBackgroundColor,
-        });
+        // Background (drawn before text so it appears behind glyphs)
+        if (obj.textBackgroundColor) {
+          drawTextBackground(page, xOffset, baselineY, lineHeightPx, obj.fontSize, lineWidth, obj.textBackgroundColor);
+        }
 
         if (charSpacingPt !== 0) {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(charSpacingPt)]));
@@ -182,8 +188,8 @@ export class TextRenderer extends BaseRenderer {
           page.pushOperators(PDFOperator.of(PDFOperatorNames.SetCharacterSpacing, [PDFNumber.of(0)]));
         }
 
-        // Decorations (drawn after text)
-        drawDecoratedLine(page, xOffset, baselineY, lineHeightPx, obj.fontSize, lineWidth, pdfColor, {
+        // Decorations (drawn after text so they render on top)
+        drawTextDecorations(page, xOffset, baselineY, obj.fontSize, lineWidth, pdfColor, {
           underline: obj.underline,
           linethrough: obj.linethrough,
           overline: obj.overline,

@@ -126,7 +126,7 @@ describe('textBackgroundColor', () => {
 
     await renderer.render(text, context.page, context);
 
-    expect(context.page.drawSvgPath).toHaveBeenCalled();
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(1);
   });
 
   it('does NOT call drawSvgPath for background when textBackgroundColor is null', async () => {
@@ -148,7 +148,7 @@ describe('text decorations', () => {
 
     await renderer.render(text, context.page, context);
 
-    expect(context.page.drawSvgPath).toHaveBeenCalled();
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(1);
   });
 
   it('draws an extra drawSvgPath when linethrough is true', async () => {
@@ -158,7 +158,7 @@ describe('text decorations', () => {
 
     await renderer.render(text, context.page, context);
 
-    expect(context.page.drawSvgPath).toHaveBeenCalled();
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(1);
   });
 
   it('draws an extra drawSvgPath when overline is true', async () => {
@@ -168,7 +168,7 @@ describe('text decorations', () => {
 
     await renderer.render(text, context.page, context);
 
-    expect(context.page.drawSvgPath).toHaveBeenCalled();
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(1);
   });
 
   it('draws NO extra drawSvgPath when all decorations are false and no background', async () => {
@@ -198,6 +198,17 @@ describe('text decorations', () => {
 
     await renderer.render(text, context.page, context);
 
+    expect(context.page.drawSvgPath).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws background + underline = 2 drawSvgPath calls when both are set', async () => {
+    const renderer = new TextRenderer();
+    const text = createMockText({ textBackgroundColor: '#ffff00', underline: true, text: 'hello' });
+    const context = createMockContext();
+
+    await renderer.render(text, context.page, context);
+
+    // 1 background + 1 underline = 2
     expect(context.page.drawSvgPath).toHaveBeenCalledTimes(2);
   });
 });
