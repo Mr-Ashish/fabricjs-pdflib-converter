@@ -235,6 +235,7 @@ describe('justify alignment', () => {
 
   it('does NOT emit Tw for the last line in justify mode', async () => {
     const renderer = new TextRenderer();
+    // Two lines: first is non-last (gets Tw set+reset = 2 ops), second IS last (no Tw)
     const text = createMockText({
       textAlign: 'justify',
       text: 'hello world\nlast line here',
@@ -249,7 +250,8 @@ describe('justify alignment', () => {
     const twOps = allOps.filter(
       (op) => typeof op === 'object' && op !== null && (op as { name?: string }).name === 'Tw',
     );
-    expect(twOps).toHaveLength(0);
+    // Exactly 2 Tw ops: set+reset for line 0 only — last line contributes none
+    expect(twOps).toHaveLength(2);
   });
 
   it('does NOT emit Tw for left/center/right alignment', async () => {
