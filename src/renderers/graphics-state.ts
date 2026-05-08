@@ -29,7 +29,7 @@ export function applyGraphicsState(
   const opacity = options.opacity ?? 1;
   const blendMode = options.blendMode ?? 'source-over';
 
-  const isOpaque = opacity >= 0.999;
+  const isOpaque = opacity >= 1;
   const isNormal = blendMode === 'source-over' || blendMode === 'normal' || blendMode === '';
 
   if (isOpaque && isNormal) return;

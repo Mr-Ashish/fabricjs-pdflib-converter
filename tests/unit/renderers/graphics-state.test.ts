@@ -20,6 +20,22 @@ function createMockPage() {
   };
 }
 
+function createMockPageNoExtGState() {
+  const resourcesDict = {
+    lookup: vi.fn().mockReturnValue(null), // no pre-existing ExtGState
+    set: vi.fn(),
+  };
+  return {
+    page: {
+      pushOperators: vi.fn(),
+      node: {
+        Resources: vi.fn().mockReturnValue(resourcesDict),
+      },
+    } as unknown as PDFPage,
+    resourcesDict,
+  };
+}
+
 function createMockPdfDoc() {
   return {
     context: {
@@ -102,5 +118,34 @@ describe('applyGraphicsState', () => {
     const op0 = calls[0]![0] as { args: Array<{ decodeText: () => string }> };
     const op1 = calls[1]![0] as { args: Array<{ decodeText: () => string }> };
     expect(op0).not.toEqual(op1);
+  });
+
+  it('does nothing when blendMode is "normal" (string literal)', () => {
+    const { page } = createMockPage();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: 1, blendMode: 'normal' });
+    expect(page.pushOperators).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when blendMode is empty string', () => {
+    const { page } = createMockPage();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: 1, blendMode: '' });
+    expect(page.pushOperators).not.toHaveBeenCalled();
+  });
+
+  it('falls back to "Normal" in BM entry for unknown blend mode', () => {
+    const { page } = createMockPage();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: 1, blendMode: 'xor' });
+    const contextObj = vi.mocked(pdfDoc.context.obj).mock.calls[0]![0] as Record<string, unknown>;
+    expect(contextObj['BM']).toBe('Normal');
+  });
+
+  it('calls resourcesDict.set to register the ExtGState dict when none exists yet', () => {
+    const { page, resourcesDict } = createMockPageNoExtGState();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: 0.5 });
+    expect(resourcesDict.set).toHaveBeenCalled();
   });
 });
