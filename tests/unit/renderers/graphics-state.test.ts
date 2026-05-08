@@ -1,6 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { applyGraphicsState, resetGsCounter } from '../../../src/renderers/graphics-state';
+import { describe, it, expect, vi } from 'vitest';
+import { applyGraphicsState } from '../../../src/renderers/graphics-state';
+import { PDFName } from 'pdf-lib';
 import type { PDFPage, PDFDocument } from 'pdf-lib';
+
+let gsKeyCounter = 0;
 
 function createMockPage() {
   const extGStateDict = { set: vi.fn() };
@@ -13,6 +16,7 @@ function createMockPage() {
       pushOperators: vi.fn(),
       node: {
         Resources: vi.fn().mockReturnValue(resourcesDict),
+        newExtGState: vi.fn().mockImplementation(() => PDFName.of(`GS-${gsKeyCounter++}`)),
       },
     } as unknown as PDFPage,
     extGStateDict,
@@ -30,6 +34,7 @@ function createMockPageNoExtGState() {
       pushOperators: vi.fn(),
       node: {
         Resources: vi.fn().mockReturnValue(resourcesDict),
+        newExtGState: vi.fn().mockImplementation(() => PDFName.of(`GS-${gsKeyCounter++}`)),
       },
     } as unknown as PDFPage,
     resourcesDict,
@@ -45,8 +50,6 @@ function createMockPdfDoc() {
 }
 
 describe('applyGraphicsState', () => {
-  beforeEach(() => { resetGsCounter(); });
-
   it('does nothing when opacity is 1 and blendMode is source-over', () => {
     const { page } = createMockPage();
     const pdfDoc = createMockPdfDoc();
@@ -92,7 +95,6 @@ describe('applyGraphicsState', () => {
       ['exclusion', 'Exclusion'],
     ];
     for (const [fabricBm, pdfBm] of cases) {
-      resetGsCounter();
       const { page } = createMockPage();
       const pdfDoc = createMockPdfDoc();
       applyGraphicsState(page, pdfDoc, { opacity: 1, blendMode: fabricBm });
@@ -101,23 +103,21 @@ describe('applyGraphicsState', () => {
     }
   });
 
-  it('creates ExtGState with no-repeat resources when ExtGState dict already exists', () => {
-    const { page, extGStateDict } = createMockPage();
+  it('calls newExtGState twice for successive calls', () => {
+    const { page } = createMockPage();
     const pdfDoc = createMockPdfDoc();
     applyGraphicsState(page, pdfDoc, { opacity: 0.5 });
     applyGraphicsState(page, pdfDoc, { opacity: 0.3 });
-    expect(extGStateDict.set).toHaveBeenCalledTimes(2);
+    expect((page.node as unknown as { newExtGState: ReturnType<typeof vi.fn> }).newExtGState).toHaveBeenCalledTimes(2);
   });
 
-  it('uses unique gs names for successive calls', () => {
+  it('uses unique gs operators for successive calls', () => {
     const { page } = createMockPage();
     const pdfDoc = createMockPdfDoc();
     applyGraphicsState(page, pdfDoc, { opacity: 0.5 });
     applyGraphicsState(page, pdfDoc, { opacity: 0.3 });
     const calls = vi.mocked(page.pushOperators).mock.calls;
-    const op0 = calls[0]![0] as { args: Array<{ decodeText: () => string }> };
-    const op1 = calls[1]![0] as { args: Array<{ decodeText: () => string }> };
-    expect(op0).not.toEqual(op1);
+    expect(calls[0]![0]).not.toEqual(calls[1]![0]);
   });
 
   it('does nothing when blendMode is "normal" (string literal)', () => {
@@ -142,10 +142,26 @@ describe('applyGraphicsState', () => {
     expect(contextObj['BM']).toBe('Normal');
   });
 
-  it('calls resourcesDict.set to register the ExtGState dict when none exists yet', () => {
-    const { page, resourcesDict } = createMockPageNoExtGState();
+  it('calls page.node.newExtGState to register the ExtGState dict', () => {
+    const { page } = createMockPageNoExtGState();
     const pdfDoc = createMockPdfDoc();
     applyGraphicsState(page, pdfDoc, { opacity: 0.5 });
-    expect(resourcesDict.set).toHaveBeenCalled();
+    expect((page.node as unknown as { newExtGState: ReturnType<typeof vi.fn> }).newExtGState).toHaveBeenCalledTimes(1);
+  });
+
+  it('clamps opacity above 1 to 1 (no-op)', () => {
+    const { page } = createMockPage();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: 2 });
+    expect(page.pushOperators).not.toHaveBeenCalled();
+  });
+
+  it('clamps opacity below 0 to 0', () => {
+    const { page } = createMockPage();
+    const pdfDoc = createMockPdfDoc();
+    applyGraphicsState(page, pdfDoc, { opacity: -0.5 });
+    const contextObj = vi.mocked(pdfDoc.context.obj).mock.calls[0]![0] as Record<string, unknown>;
+    expect(contextObj['ca']).toBe(0);
+    expect(contextObj['CA']).toBe(0);
   });
 });

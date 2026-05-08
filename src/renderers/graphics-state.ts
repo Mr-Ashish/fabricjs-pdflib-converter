@@ -1,4 +1,4 @@
-import { PDFName, PDFDict, PDFOperator } from 'pdf-lib';
+import { setGraphicsState } from 'pdf-lib';
 import type { PDFPage, PDFDocument } from 'pdf-lib';
 
 const BLEND_MODE_MAP: Record<string, string> = {
@@ -15,26 +15,18 @@ const BLEND_MODE_MAP: Record<string, string> = {
   'exclusion': 'Exclusion',
 };
 
-let gsCounter = 0;
-
-export function resetGsCounter(): void {
-  gsCounter = 0;
-}
-
 export function applyGraphicsState(
   page: PDFPage,
   pdfDoc: PDFDocument,
   options: { opacity?: number; blendMode?: string },
 ): void {
-  const opacity = options.opacity ?? 1;
+  const opacity = Math.min(1, Math.max(0, options.opacity ?? 1));
   const blendMode = options.blendMode ?? 'source-over';
 
   const isOpaque = opacity >= 1;
   const isNormal = blendMode === 'source-over' || blendMode === 'normal' || blendMode === '';
 
   if (isOpaque && isNormal) return;
-
-  const gsName = `GS_${String(gsCounter++).padStart(4, '0')}`;
 
   const entries: Record<string, unknown> = { Type: 'ExtGState' };
   if (!isOpaque) {
@@ -45,15 +37,7 @@ export function applyGraphicsState(
     entries['BM'] = BLEND_MODE_MAP[blendMode] ?? 'Normal';
   }
 
-  const gsDict = pdfDoc.context.obj(entries);
-
-  const resourcesDict = (page.node as unknown as { Resources: () => PDFDict }).Resources();
-  let extGState = resourcesDict.lookup(PDFName.of('ExtGState')) as PDFDict | undefined;
-  if (!extGState) {
-    extGState = pdfDoc.context.obj({}) as PDFDict;
-    resourcesDict.set(PDFName.of('ExtGState'), extGState);
-  }
-  extGState.set(PDFName.of(gsName), gsDict);
-
-  page.pushOperators(PDFOperator.of('gs', [PDFName.of(gsName)]));
+  const gsDict = pdfDoc.context.obj(entries as Parameters<typeof pdfDoc.context.obj>[0]);
+  const gsKey = (page.node as unknown as { newExtGState: (tag: string, dict: unknown) => import('pdf-lib').PDFName }).newExtGState('GS', gsDict);
+  page.pushOperators(setGraphicsState(gsKey));
 }
