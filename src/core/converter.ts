@@ -16,6 +16,7 @@ import { FontManager } from '../fonts/font-manager';
 import { ImageLoader } from '../images/image-loader';
 import { WarningCollector } from '../errors/warnings';
 import { applyTransformations } from '../transform';
+import { parseColor } from '../color';
 
 // A4 dimensions in PDF points (72 points per inch)
 const A4_WIDTH = 595.28;
@@ -158,7 +159,33 @@ async function renderObject(
     return;
   }
 
-  // Save graphics state before applying object transformations
+  // Shadow pre-pass: render a clone at the offset position before the main object
+  if (obj.shadow) {
+    const shadow = obj.shadow;
+    const shadowColor = shadow.color ?? 'rgba(0,0,0,0.5)';
+    const parsedShadowColor = parseColor(shadowColor);
+    const shadowOpacity = parsedShadowColor?.a ?? 0.5;
+
+    const shadowClone: FabricObject = {
+      ...obj,
+      left: (obj.left ?? 0) + (shadow.offsetX ?? 0),
+      top: (obj.top ?? 0) + (shadow.offsetY ?? 0),
+      fill: shadowColor,
+      stroke: shadow.affectStroke ? shadowColor : null,
+      opacity: shadowOpacity,
+      shadow: null, // prevent infinite recursion
+    };
+
+    page.pushOperators(pushGraphicsState());
+    try {
+      applyTransformations(shadowClone, page, context);
+      await renderer.render(shadowClone, page, context);
+    } finally {
+      page.pushOperators(popGraphicsState());
+    }
+  }
+
+  // Main render pass (save graphics state before applying object transformations)
   page.pushOperators(pushGraphicsState());
 
   try {
@@ -248,5 +275,3 @@ export async function convertCanvasToPdf(
   };
 }
 
-// Helper function to parse color (imported from color module)
-import { parseColor } from '../color';
