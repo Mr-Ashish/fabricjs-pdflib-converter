@@ -34,39 +34,7 @@ export class ImageRenderer extends BaseRenderer {
       if (hasCrop) {
         page.pushOperators(pushGraphicsState());
         // Clip to the display rectangle in local space
-        traceClipPath(
-          {
-            type: 'rect',
-            left: 0,
-            top: 0,
-            width,
-            height,
-            scaleX: 1,
-            scaleY: 1,
-            angle: 0,
-            skewX: 0,
-            skewY: 0,
-            flipX: false,
-            flipY: false,
-            originX: 'left',
-            originY: 'top',
-            fill: null,
-            stroke: null,
-            strokeWidth: 0,
-            strokeDashArray: null,
-            strokeLineCap: 'butt',
-            strokeLineJoin: 'miter',
-            strokeMiterLimit: 4,
-            strokeUniform: false,
-            opacity: 1,
-            visible: true,
-            shadow: null,
-            globalCompositeOperation: 'source-over',
-            rx: 0,
-            ry: 0,
-          } as FabricRectObject,
-          page,
-        );
+        traceClipPath({ type: 'rect', left: 0, top: 0, width, height } as FabricRectObject, page);
         // Draw image offset by -cropX, -cropY so the crop region maps to (0,0)
         drawImageInCanvas(page, image, {
           x: -(obj.cropX ?? 0),
