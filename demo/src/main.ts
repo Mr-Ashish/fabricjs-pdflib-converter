@@ -145,6 +145,22 @@ function addObject(type: string) {
   showStatus(`${type} added`, 'success');
 }
 
+function getShadowColor(obj: fabric.Object): string {
+  const shadow = obj.shadow as fabric.Shadow | null;
+  if (!shadow || typeof shadow !== 'object') return '#000000';
+  return (shadow.color ?? '#000000');
+}
+
+function getShadowOffsetX(obj: fabric.Object): number {
+  const shadow = obj.shadow as fabric.Shadow | null;
+  return shadow && typeof shadow === 'object' ? (shadow.offsetX ?? 0) : 0;
+}
+
+function getShadowOffsetY(obj: fabric.Object): number {
+  const shadow = obj.shadow as fabric.Shadow | null;
+  return shadow && typeof shadow === 'object' ? (shadow.offsetY ?? 0) : 0;
+}
+
 // Update properties panel when object is selected
 function updatePropertiesPanel() {
   const activeObject = canvas.getActiveObject();
@@ -199,8 +215,33 @@ function updatePropertiesPanel() {
       <label>Opacity</label>
       <input type="range" id="propOpacity" value="${(activeObject.opacity || 1) * 100}" min="0" max="100">
     </div>
+    <div class="property-row">
+      <label>Blend Mode</label>
+      <select id="propBlendMode">
+        <option value="source-over" ${(activeObject as any).globalCompositeOperation === 'source-over' || !(activeObject as any).globalCompositeOperation ? 'selected' : ''}>Normal</option>
+        <option value="multiply" ${(activeObject as any).globalCompositeOperation === 'multiply' ? 'selected' : ''}>Multiply</option>
+        <option value="screen" ${(activeObject as any).globalCompositeOperation === 'screen' ? 'selected' : ''}>Screen</option>
+        <option value="overlay" ${(activeObject as any).globalCompositeOperation === 'overlay' ? 'selected' : ''}>Overlay</option>
+        <option value="darken" ${(activeObject as any).globalCompositeOperation === 'darken' ? 'selected' : ''}>Darken</option>
+        <option value="lighten" ${(activeObject as any).globalCompositeOperation === 'lighten' ? 'selected' : ''}>Lighten</option>
+        <option value="difference" ${(activeObject as any).globalCompositeOperation === 'difference' ? 'selected' : ''}>Difference</option>
+      </select>
+    </div>
+    <div class="property-section-title">Shadow</div>
+    <div class="property-row">
+      <label>Shadow Color</label>
+      <input type="color" id="propShadowColor" value="${getShadowColor(activeObject)}">
+    </div>
+    <div class="property-row">
+      <label>Offset X</label>
+      <input type="number" id="propShadowOffsetX" value="${getShadowOffsetX(activeObject)}" min="-50" max="50">
+    </div>
+    <div class="property-row">
+      <label>Offset Y</label>
+      <input type="number" id="propShadowOffsetY" value="${getShadowOffsetY(activeObject)}" min="-50" max="50">
+    </div>
   `;
-  
+
   if (type === 'text' || type === 'textbox') {
     const textObj = activeObject as fabric.Textbox;
     html += `
@@ -227,7 +268,37 @@ function updatePropertiesPanel() {
           <option value="left" ${textObj.textAlign === 'left' ? 'selected' : ''}>Left</option>
           <option value="center" ${textObj.textAlign === 'center' ? 'selected' : ''}>Center</option>
           <option value="right" ${textObj.textAlign === 'right' ? 'selected' : ''}>Right</option>
+          <option value="justify" ${(activeObject as any).textAlign === 'justify' ? 'selected' : ''}>Justify</option>
         </select>
+      </div>
+    `;
+
+    html += `
+      <div class="property-section-title">Text Style</div>
+      <div class="property-row">
+        <label>Char Spacing</label>
+        <input type="number" id="propCharSpacing" value="${(activeObject as any).charSpacing ?? 0}" min="-500" max="1000">
+      </div>
+      <div class="property-row">
+        <label>Text Background</label>
+        <input type="color" id="propTextBg" value="${(activeObject as any).textBackgroundColor || '#ffffff'}">
+        <div class="checkbox-row" style="margin-top:4px">
+          <input type="checkbox" id="propTextBgEnabled" ${(activeObject as any).textBackgroundColor ? 'checked' : ''}>
+          <label for="propTextBgEnabled">Enable background</label>
+        </div>
+      </div>
+      <div class="property-section-title">Decorations</div>
+      <div class="checkbox-row property-row">
+        <input type="checkbox" id="propUnderline" ${(activeObject as any).underline ? 'checked' : ''}>
+        <label for="propUnderline">Underline</label>
+      </div>
+      <div class="checkbox-row property-row">
+        <input type="checkbox" id="propLinethrough" ${(activeObject as any).linethrough ? 'checked' : ''}>
+        <label for="propLinethrough">Strikethrough</label>
+      </div>
+      <div class="checkbox-row property-row">
+        <input type="checkbox" id="propOverline" ${(activeObject as any).overline ? 'checked' : ''}>
+        <label for="propOverline">Overline</label>
       </div>
     `;
   }
@@ -299,7 +370,50 @@ function updatePropertiesPanel() {
       canvas.renderAll();
     });
   }
-  
+
+  // Blend mode
+  document.getElementById('propBlendMode')?.addEventListener('change', (e) => {
+    (activeObject as any).globalCompositeOperation = (e.target as HTMLSelectElement).value;
+    canvas.renderAll();
+  });
+
+  // Shadow
+  function updateShadow() {
+    const color = (document.getElementById('propShadowColor') as HTMLInputElement)?.value ?? '#000000';
+    const offsetX = parseInt((document.getElementById('propShadowOffsetX') as HTMLInputElement)?.value ?? '0');
+    const offsetY = parseInt((document.getElementById('propShadowOffsetY') as HTMLInputElement)?.value ?? '0');
+    if (activeObject) {
+      activeObject.set('shadow', new fabric.Shadow({ color, offsetX, offsetY, blur: 0 }));
+      canvas.renderAll();
+    }
+  }
+  document.getElementById('propShadowColor')?.addEventListener('input', updateShadow);
+  document.getElementById('propShadowOffsetX')?.addEventListener('input', updateShadow);
+  document.getElementById('propShadowOffsetY')?.addEventListener('input', updateShadow);
+
+  // Text decorations
+  document.getElementById('propUnderline')?.addEventListener('change', (e) => {
+    if (activeObject) { (activeObject as any).set('underline', (e.target as HTMLInputElement).checked); canvas.renderAll(); }
+  });
+  document.getElementById('propLinethrough')?.addEventListener('change', (e) => {
+    if (activeObject) { (activeObject as any).set('linethrough', (e.target as HTMLInputElement).checked); canvas.renderAll(); }
+  });
+  document.getElementById('propOverline')?.addEventListener('change', (e) => {
+    if (activeObject) { (activeObject as any).set('overline', (e.target as HTMLInputElement).checked); canvas.renderAll(); }
+  });
+  document.getElementById('propCharSpacing')?.addEventListener('input', (e) => {
+    if (activeObject) { (activeObject as any).set('charSpacing', parseInt((e.target as HTMLInputElement).value) || 0); canvas.renderAll(); }
+  });
+  document.getElementById('propTextBgEnabled')?.addEventListener('change', (e) => {
+    const enabled = (e.target as HTMLInputElement).checked;
+    const color = (document.getElementById('propTextBg') as HTMLInputElement)?.value ?? '#ffffff';
+    if (activeObject) { (activeObject as any).set('textBackgroundColor', enabled ? color : null); canvas.renderAll(); }
+  });
+  document.getElementById('propTextBg')?.addEventListener('input', (e) => {
+    const enabled = (document.getElementById('propTextBgEnabled') as HTMLInputElement)?.checked;
+    if (enabled && activeObject) { (activeObject as any).set('textBackgroundColor', (e.target as HTMLInputElement).value); canvas.renderAll(); }
+  });
+
   document.getElementById('deleteObj')?.addEventListener('click', () => {
     canvas.remove(activeObject);
     canvas.discardActiveObject();
@@ -466,6 +580,75 @@ function showStatus(message: string, type: 'success' | 'error' | '') {
     statusEl.classList.remove('show');
   }, 3000);
 }
+
+// Demo preset loaders
+document.getElementById('presetOpacity')?.addEventListener('click', () => {
+  canvas.clear();
+  canvas.backgroundColor = '#e8e8e8';
+  const bg = new fabric.Rect({ left: 50, top: 50, width: 300, height: 200, fill: '#3498db', opacity: 1 });
+  const overlay = new fabric.Rect({ left: 100, top: 100, width: 300, height: 200, fill: '#e74c3c', opacity: 0.5 });
+  canvas.add(bg, overlay);
+  canvas.renderAll();
+  showStatus('Opacity demo loaded — red rect is 50% transparent', 'success');
+});
+
+document.getElementById('presetShadow')?.addEventListener('click', () => {
+  canvas.clear();
+  canvas.backgroundColor = '#f0f0f0';
+  const rect = new fabric.Rect({
+    left: 150, top: 100, width: 200, height: 120,
+    fill: '#27ae60',
+    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.4)', offsetX: 8, offsetY: 8, blur: 0 }),
+  });
+  const circle = new fabric.Circle({
+    left: 100, top: 200, radius: 60, fill: '#e74c3c',
+    shadow: new fabric.Shadow({ color: 'rgba(0,0,50,0.5)', offsetX: -5, offsetY: 10, blur: 0 }),
+  });
+  canvas.add(rect, circle);
+  canvas.renderAll();
+  showStatus('Shadow demo loaded', 'success');
+});
+
+document.getElementById('presetTextDecor')?.addEventListener('click', () => {
+  canvas.clear();
+  canvas.backgroundColor = '#ffffff';
+  const t1 = new fabric.Textbox('Underlined text', {
+    left: 50, top: 60, width: 300, fontSize: 28, fontFamily: 'Helvetica',
+    fill: '#2c3e50', underline: true,
+  } as any);
+  const t2 = new fabric.Textbox('Strikethrough text', {
+    left: 50, top: 130, width: 300, fontSize: 28, fontFamily: 'Helvetica',
+    fill: '#e74c3c', linethrough: true,
+  } as any);
+  const t3 = new fabric.Textbox('Overlined text', {
+    left: 50, top: 200, width: 300, fontSize: 28, fontFamily: 'Helvetica',
+    fill: '#27ae60', overline: true,
+  } as any);
+  const t4 = new fabric.Textbox('Spaced out text', {
+    left: 50, top: 270, width: 400, fontSize: 24, fontFamily: 'Helvetica',
+    fill: '#8e44ad', charSpacing: 300,
+  } as any);
+  const t5 = new fabric.Textbox('Highlighted text', {
+    left: 50, top: 330, width: 300, fontSize: 28, fontFamily: 'Helvetica',
+    fill: '#2c3e50', textBackgroundColor: '#f1c40f',
+  } as any);
+  canvas.add(t1, t2, t3, t4, t5);
+  canvas.renderAll();
+  showStatus('Text decorations demo loaded', 'success');
+});
+
+document.getElementById('presetBlendMode')?.addEventListener('click', () => {
+  canvas.clear();
+  canvas.backgroundColor = '#ffffff';
+  const r1 = new fabric.Rect({ left: 80, top: 80, width: 200, height: 200, fill: '#3498db' });
+  const r2 = new fabric.Rect({
+    left: 160, top: 160, width: 200, height: 200, fill: '#e74c3c',
+    globalCompositeOperation: 'multiply',
+  } as any);
+  canvas.add(r1, r2);
+  canvas.renderAll();
+  showStatus('Blend mode demo: red rect uses "multiply" blend mode', 'success');
+});
 
 // Initialize with a demo object
 addObject('rect');
