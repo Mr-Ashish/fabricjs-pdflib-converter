@@ -130,8 +130,11 @@ describe('createDefaultRegistry', () => {
 
     it('should return registry with all built-in renderers registered', () => {
     const registry = createDefaultRegistry();
-    // 5 shape + 3 vector path + 1 image + 1 text + 2 text aliases (i-text, textbox) + 1 group
-    expect(registry.getAll().size).toBe(13);
+    // Each renderer registers its canonical type + uppercase aliases:
+    // rect+Rect, circle+Circle, ellipse+Ellipse, triangle+Triangle, line+Line,
+    // path+Path, polyline+Polyline, polygon+Polygon (8×2=16), image+Image (2),
+    // text+Text+IText+i-text+Textbox+textbox (6), group+Group (2) = 26 total
+    expect(registry.getAll().size).toBe(26);
     expect(registry.has('rect')).toBe(true);
     expect(registry.has('circle')).toBe(true);
     expect(registry.has('ellipse')).toBe(true);
