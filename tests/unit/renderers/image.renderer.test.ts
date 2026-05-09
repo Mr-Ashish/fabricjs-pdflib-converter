@@ -261,3 +261,36 @@ describe('ImageRenderer', () => {
     });
   });
 });
+
+describe('cropX and cropY', () => {
+  it('applies clip operators when cropX > 0', async () => {
+    const renderer = new ImageRenderer();
+    const context = createMockContext();
+
+    const obj = createMockImage({ cropX: 20, cropY: 0, width: 100, height: 80 });
+    await renderer.render(obj, context.page, context);
+
+    const allOps = vi.mocked(context.page.pushOperators).mock.calls.flat();
+    const opNames = allOps
+      .filter((op) => typeof op === 'object' && op !== null && 'name' in (op as object))
+      .map((op) => (op as unknown as { name: string }).name);
+
+    expect(opNames).toContain('W');
+    expect(opNames).toContain('n');
+  });
+
+  it('does NOT add clip operators when cropX and cropY are both 0', async () => {
+    const renderer = new ImageRenderer();
+    const context = createMockContext();
+
+    const obj = createMockImage({ cropX: 0, cropY: 0 });
+    await renderer.render(obj, context.page, context);
+
+    const allOps = vi.mocked(context.page.pushOperators).mock.calls.flat();
+    const opNames = allOps
+      .filter((op) => typeof op === 'object' && op !== null && 'name' in (op as object))
+      .map((op) => (op as unknown as { name: string }).name);
+
+    expect(opNames).not.toContain('W');
+  });
+});
